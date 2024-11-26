@@ -5,8 +5,8 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from telegram import Bot, Update
-from telegram.ext import CommandHandler, Updater
+from telegram import Update
+from telegram.ext import CommandHandler, Updater, CallbackContext
 
 # Define the scopes for Google Calendar API
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -48,7 +48,7 @@ def get_calendar_events():
 
     return filtered_events
 
-def send_events(update: Update, context):
+def send_events(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's events to the Telegram chat."""
     events = get_calendar_events()
     if not events:
