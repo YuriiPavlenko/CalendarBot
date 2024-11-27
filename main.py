@@ -43,6 +43,10 @@ def get_calendar_events():
         filtered_events = [event for event in events if event.get('colorId') == '5']
         print("Filtered events:", filtered_events)  # Debugging line
 
+        print("Time range:", start_of_today.isoformat(), "to", end_of_tomorrow.isoformat())
+
+        print("API response:", events_result)
+
         return filtered_events
 
     except Exception as e:
@@ -65,7 +69,7 @@ def send_events(update: Update, context: CallbackContext):
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-    TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL')
+    TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL').rstrip('/')
 
     updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
