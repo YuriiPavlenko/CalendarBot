@@ -13,7 +13,7 @@ def get_service_account_credentials():
     return credentials
 
 def get_calendar_meetings(time_min, time_max):
-    """Fetches events with color ID 5 from the Google Calendar within a specified time range."""
+    """Fetches meetings with color ID 5 from the Google Calendar within a specified time range."""
     creds = get_service_account_credentials()
     service = build('calendar', 'v3', credentials=creds)
 
@@ -27,10 +27,20 @@ def get_calendar_meetings(time_min, time_max):
             orderBy='startTime'
         ).execute()
 
-        # Filter events by color ID 5
-        filtered_events = [event for event in events_result.get('items', []) if event.get('colorId') == '5']
-        return filtered_events
+        # Filter events by color ID 5 and add goal and attendants
+        meetings = []
+        for event in events_result.get('items', []):
+            if event.get('colorId') == '5':
+                meeting = {
+                    'start': event['start'],
+                    'end': event['end'],
+                    'summary': event.get('summary', 'No Title'),
+                    'goal': event.get('description', 'No Description'),
+                    'attendants': [attendee.get('email') for attendee in event.get('attendees', [])]
+                }
+                meetings.append(meeting)
+        return meetings
 
     except Exception as e:
-        print("Error fetching events:", e)
+        print("Error fetching meetings:", e)
         return [] 
