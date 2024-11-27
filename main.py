@@ -27,22 +27,27 @@ def get_calendar_events():
     start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_tomorrow = start_of_today + datetime.timedelta(days=2)
 
-    events_result = service.events().list(
-        calendarId='primary',
-        timeMin=start_of_today.isoformat(),
-        timeMax=end_of_tomorrow.isoformat(),
-        singleEvents=True,
-        orderBy='startTime'
-    ).execute()
+    try:
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=start_of_today.isoformat(),
+            timeMax=end_of_tomorrow.isoformat(),
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
 
-    events = events_result.get('items', [])
-    print("Fetched events:", events)  # Debugging line
+        events = events_result.get('items', [])
+        print("Fetched events:", events)  # Debugging line
 
-    # Filter events by color ID 5
-    filtered_events = [event for event in events if event.get('colorId') == '5']
-    print("Filtered events:", filtered_events)  # Debugging line
+        # Filter events by color ID 5
+        filtered_events = [event for event in events if event.get('colorId') == '5']
+        print("Filtered events:", filtered_events)  # Debugging line
 
-    return filtered_events
+        return filtered_events
+
+    except Exception as e:
+        print("Error fetching events:", e)
+        return []
 
 def send_events(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's events to the Telegram chat."""
