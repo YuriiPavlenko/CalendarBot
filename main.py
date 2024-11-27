@@ -70,9 +70,9 @@ def main():
 
     # Start the webhook
     updater.start_webhook(listen="0.0.0.0",
-                          port=int(os.environ.get('PORT', '8443')),
-                          url_path=TELEGRAM_BOT_TOKEN)
-    updater.bot.set_webhook(TELEGRAM_WEBHOOK_URL + TELEGRAM_BOT_TOKEN)
+                          port=443,
+                          url_path=TELEGRAM_BOT_TOKEN,
+                          webhook_url=f"{TELEGRAM_WEBHOOK_URL}/{TELEGRAM_BOT_TOKEN}")
 
     updater.idle()
 
