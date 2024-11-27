@@ -1,16 +1,25 @@
 import os
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
 from telegram import BotCommand
-from commands.today_tomorrow import send_today_tomorrow_events
-from commands.week import send_week_events
+from commands.today import send_today_meetings
+from commands.tomorrow import send_tomorrow_meetings
+from commands.today_tomorrow import send_today_tomorrow_meetings
+from commands.week import send_week_meetings
+from commands.next_week import send_next_week_meetings
 from commands.start import start
 
 def handle_message(update, context):
     text = update.message.text
-    if text == 'Події на сьогодні та завтра':
-        send_today_tomorrow_events(update, context)
-    elif text == 'Події на цей тиждень':
-        send_week_events(update, context)
+    if text == 'Зустрічі на сьогодні':
+        send_today_meetings(update, context)
+    elif text == 'Зустрічі на завтра':
+        send_tomorrow_meetings(update, context)
+    elif text == 'Зустрічі на сьогодні та завтра':
+        send_today_tomorrow_meetings(update, context)
+    elif text == 'Зустрічі на цей тиждень':
+        send_week_meetings(update, context)
+    elif text == 'Зустрічі на наступний тиждень':
+        send_next_week_meetings(update, context)
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -22,16 +31,22 @@ def main():
     # Set bot commands for the menu
     updater.bot.set_my_commands([
         BotCommand("start", "Почати взаємодію з ботом"),
-        BotCommand("getevents", "Отримати події на сьогодні та завтра"),
-        BotCommand("getweekevents", "Отримати події на цей тиждень")
+        BotCommand("today", "Отримати зустрічі на сьогодні"),
+        BotCommand("tomorrow", "Отримати зустрічі на завтра"),
+        BotCommand("today_tomorrow", "Отримати зустрічі на сьогодні та завтра"),
+        BotCommand("week", "Отримати зустрічі на цей тиждень"),
+        BotCommand("next_week", "Отримати зустрічі на наступний тиждень")
     ])
 
     # Command to start the bot and show buttons
     dispatcher.add_handler(CommandHandler('start', start))
 
     # Command handlers for functional commands
-    dispatcher.add_handler(CommandHandler('getevents', send_today_tomorrow_events))
-    dispatcher.add_handler(CommandHandler('getweekevents', send_week_events))
+    dispatcher.add_handler(CommandHandler('today', send_today_meetings))
+    dispatcher.add_handler(CommandHandler('tomorrow', send_tomorrow_meetings))
+    dispatcher.add_handler(CommandHandler('today_tomorrow', send_today_tomorrow_meetings))
+    dispatcher.add_handler(CommandHandler('week', send_week_meetings))
+    dispatcher.add_handler(CommandHandler('next_week', send_next_week_meetings))
 
     # Handle custom keyboard inputs
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))

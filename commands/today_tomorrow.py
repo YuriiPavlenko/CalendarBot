@@ -2,12 +2,11 @@ import datetime
 import pytz
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
-from calendar_service import get_calendar_events
-from event_formatter import format_event
+from calendar_service import get_calendar_meetings
+from event_formatter import format_meeting
 
-def send_today_tomorrow_events(update: Update, context: CallbackContext):
-    """Sends today's and tomorrow's events to the Telegram chat."""
-    # Use the message object directly since this is a command handler
+def send_today_tomorrow_meetings(update: Update, context: CallbackContext):
+    """Sends today's and tomorrow's meetings to the Telegram chat."""
     chat_id = update.effective_chat.id
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
@@ -17,27 +16,27 @@ def send_today_tomorrow_events(update: Update, context: CallbackContext):
     start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_tomorrow = start_of_today + datetime.timedelta(days=2)
 
-    today_events = []
-    tomorrow_events = []
+    today_meetings = []
+    tomorrow_meetings = []
 
-    events = get_calendar_events(start_of_today, end_of_tomorrow)
+    meetings = get_calendar_meetings(start_of_today, end_of_tomorrow)
 
-    for event in events:
-        start_time = datetime.datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
+    for meeting in meetings:
+        start_time = datetime.datetime.fromisoformat(meeting['start'].get('dateTime', meeting['start'].get('date')))
         if start_of_today <= start_time < start_of_today + datetime.timedelta(days=1):
-            today_events.append(event)
+            today_meetings.append(meeting)
         elif start_of_today + datetime.timedelta(days=1) <= start_time < end_of_tomorrow:
-            tomorrow_events.append(event)
+            tomorrow_meetings.append(meeting)
 
-    if not today_events and not tomorrow_events:
-        context.bot.send_message(chat_id=chat_id, text='Немає подій на сьогодні та завтра.')
+    if not today_meetings and not tomorrow_meetings:
+        context.bot.send_message(chat_id=chat_id, text='Немає зустрічей на сьогодні та завтра з кольором ID 5.')
     else:
-        message = "Події на сьогодні:\n"
-        for event in today_events:
-            message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
+        message = "Зустрічі на сьогодні:\n"
+        for meeting in today_meetings:
+            message += f"{format_meeting(meeting, thailand_tz, ukraine_tz)}\n"
 
-        message += "\nПодії на завтра:\n"
-        for event in tomorrow_events:
-            message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
+        message += "\nЗустрічі на завтра:\n"
+        for meeting in tomorrow_meetings:
+            message += f"{format_meeting(meeting, thailand_tz, ukraine_tz)}\n"
 
         context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 
