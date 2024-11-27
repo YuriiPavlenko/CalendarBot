@@ -8,8 +8,8 @@ from event_formatter import format_event
 
 def send_week_events(update: Update, context: CallbackContext):
     """Sends all events for the current week to the Telegram chat."""
-    TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-    bot = context.bot
+    query = update.callback_query
+    query.answer()
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
@@ -21,7 +21,7 @@ def send_week_events(update: Update, context: CallbackContext):
     events = get_calendar_events(start_of_week, end_of_week)
 
     if not events:
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Немає подій на цей тиждень з кольором ID 5.')
+        query.edit_message_text(text='Немає подій на цей тиждень.')
     else:
         message = "Події на цей тиждень:\n"
         days_of_week = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя']
@@ -37,4 +37,4 @@ def send_week_events(update: Update, context: CallbackContext):
 
             message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
 
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN) 
+        query.edit_message_text(text=message, parse_mode=ParseMode.MARKDOWN) 

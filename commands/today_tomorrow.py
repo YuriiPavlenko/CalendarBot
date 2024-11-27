@@ -8,8 +8,8 @@ from event_formatter import format_event
 
 def send_today_tomorrow_events(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's events to the Telegram chat."""
-    TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-    bot = context.bot
+    query = update.callback_query
+    query.answer()
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
@@ -31,7 +31,7 @@ def send_today_tomorrow_events(update: Update, context: CallbackContext):
             tomorrow_events.append(event)
 
     if not today_events and not tomorrow_events:
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Немає подій на сьогодні та завтра з кольором ID 5.')
+        query.edit_message_text(text='Немає подій на сьогодні та завтра.')
     else:
         message = "Події на сьогодні:\n"
         for event in today_events:
@@ -41,4 +41,4 @@ def send_today_tomorrow_events(update: Update, context: CallbackContext):
         for event in tomorrow_events:
             message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
 
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN) 
+        query.edit_message_text(text=message, parse_mode=ParseMode.MARKDOWN) 
