@@ -1,6 +1,7 @@
 import os
 import datetime
 import json
+import pytz
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from telegram import Update, Bot
@@ -20,22 +21,26 @@ def get_calendar_events():
     creds = get_service_account_credentials()
     service = build('calendar', 'v3', credentials=creds)
 
-    # Define the time range for today and tomorrow
-    now = datetime.datetime.utcnow()
+    # Define the time range for today and tomorrow in Thailand time zone
+    thailand_tz = pytz.timezone('Asia/Bangkok')
+    now = datetime.datetime.now(thailand_tz)
     start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_tomorrow = start_of_today + datetime.timedelta(days=2)
 
     events_result = service.events().list(
         calendarId='primary',
-        timeMin=start_of_today.isoformat() + 'Z',
-        timeMax=end_of_tomorrow.isoformat() + 'Z',
+        timeMin=start_of_today.isoformat(),
+        timeMax=end_of_tomorrow.isoformat(),
         singleEvents=True,
         orderBy='startTime'
     ).execute()
 
     events = events_result.get('items', [])
+    print("Fetched events:", events)  # Debugging line
+
     # Filter events by color ID 5
     filtered_events = [event for event in events if event.get('colorId') == '5']
+    print("Filtered events:", filtered_events)  # Debugging line
 
     return filtered_events
 
@@ -55,6 +60,7 @@ def send_events(update: Update, context: CallbackContext):
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+    TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL')
 
     updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
@@ -62,7 +68,12 @@ def main():
     # Command to fetch events
     dispatcher.add_handler(CommandHandler('getevents', send_events))
 
-    updater.start_polling()
+    # Start the webhook
+    updater.start_webhook(listen="0.0.0.0",
+                          port=int(os.environ.get('PORT', '8443')),
+                          url_path=TELEGRAM_BOT_TOKEN)
+    updater.bot.set_webhook(TELEGRAM_WEBHOOK_URL + TELEGRAM_BOT_TOKEN)
+
     updater.idle()
 
 if __name__ == '__main__':
