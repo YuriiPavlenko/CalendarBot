@@ -1,7 +1,7 @@
 import datetime
 import pytz
 
-def format_event(event, thailand_tz, ukraine_tz):
+def format_meeting(event, thailand_tz, ukraine_tz):
     """Formats the event time for display in both Thailand and Ukraine time zones."""
     start_time = datetime.datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
     end_time = datetime.datetime.fromisoformat(event['end'].get('dateTime', event['end'].get('date')))
