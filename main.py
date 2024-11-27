@@ -29,6 +29,10 @@ def main():
     # Command to start the bot and show buttons
     dispatcher.add_handler(CommandHandler('start', start))
 
+    # Command handlers for functional commands
+    dispatcher.add_handler(CommandHandler('getevents', send_today_tomorrow_events))
+    dispatcher.add_handler(CommandHandler('getweekevents', send_week_events))
+
     # Handle custom keyboard inputs
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
