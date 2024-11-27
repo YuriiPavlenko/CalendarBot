@@ -1,52 +1,23 @@
 import os
 import datetime
-import pickle
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+import json
+from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from telegram import Update, Bot
 from telegram.ext import CommandHandler, Updater, CallbackContext
-import json
 
 # Define the scopes for Google Calendar API
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
-def get_credentials():
-    """Constructs Google API credentials from environment variables."""
-    client_id = os.getenv('GOOGLE_CLIENT_ID')
-    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
-    redirect_uris = json.loads(os.getenv('GOOGLE_REDIRECT_URIS', '[]'))
-    token_uri = os.getenv('GOOGLE_TOKEN_URI')
-
-    credentials_info = {
-        "installed": {
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uris": redirect_uris,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": token_uri
-        }
-    }
-
-    flow = InstalledAppFlow.from_client_config(credentials_info, SCOPES)
-    creds = flow.run_local_server(port=0)
-    return creds
+def get_service_account_credentials():
+    """Constructs Google API credentials from a service account JSON key."""
+    service_account_info = json.loads(os.getenv('GOOGLE_SERVICE_ACCOUNT_KEY'))
+    credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+    return credentials
 
 def get_calendar_events():
     """Fetches today's and tomorrow's events with color ID 5 from the Google Calendar."""
-    creds = None
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            creds = get_credentials()
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
-
+    creds = get_service_account_credentials()
     service = build('calendar', 'v3', credentials=creds)
 
     # Define the time range for today and tomorrow
