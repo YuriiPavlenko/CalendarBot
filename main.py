@@ -17,19 +17,21 @@ def get_service_account_credentials():
     return credentials
 
 def get_calendar_events():
-    """Fetches today's and tomorrow's events from a shared Google Calendar."""
+    """Fetches today's and tomorrow's events with color ID 5 from the Google Calendar."""
     creds = get_service_account_credentials()
     service = build('calendar', 'v3', credentials=creds)
 
-    # Define the time range for today and tomorrow in Thailand time zone
+    # Define the time zones
     thailand_tz = pytz.timezone('Asia/Bangkok')
+    ukraine_tz = pytz.timezone('Europe/Kiev')
+
+    # Define the time range for today and tomorrow in Thailand time zone
     now = datetime.datetime.now(thailand_tz)
     start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_tomorrow = start_of_today + datetime.timedelta(days=2)
 
     try:
-        # Use the specific calendar ID of the shared calendar
-        calendar_id = 'hmerijes@gmail.com'
+        calendar_id = os.getenv('GOOGLE_CALENDAR_ID')  # Use environment variable for calendar ID
         events_result = service.events().list(
             calendarId=calendar_id,
             timeMin=start_of_today.isoformat(),
@@ -41,29 +43,59 @@ def get_calendar_events():
         events = events_result.get('items', [])
         print("Fetched events:", events)  # Debugging line
 
-        return events
+        # Filter events by color ID 5
+        filtered_events = [event for event in events if event.get('colorId') == '5']
+        print("Filtered events:", filtered_events)  # Debugging line
+
+        # Separate events for today and tomorrow
+        today_events = []
+        tomorrow_events = []
+
+        for event in filtered_events:
+            start_time = datetime.datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
+            if start_of_today <= start_time < start_of_today + datetime.timedelta(days=1):
+                today_events.append(event)
+            elif start_of_today + datetime.timedelta(days=1) <= start_time < end_of_tomorrow:
+                tomorrow_events.append(event)
+
+        return today_events, tomorrow_events
 
     except Exception as e:
         print("Error fetching events:", e)
-        return []
+        return [], []
+
+def format_event(event, thailand_tz, ukraine_tz):
+    """Formats the event time for display in both Thailand and Ukraine time zones."""
+    start_time = datetime.datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
+    start_time_thailand = start_time.astimezone(thailand_tz).strftime('%Y-%m-%d %H:%M')
+    start_time_ukraine = start_time.astimezone(ukraine_tz).strftime('%Y-%m-%d %H:%M')
+    return f"{event['summary']} - Thailand: {start_time_thailand}, Ukraine: {start_time_ukraine}"
 
 def send_events(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's events to the Telegram chat."""
     TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
     bot = context.bot
 
-    events = get_calendar_events()
-    if not events:
+    thailand_tz = pytz.timezone('Asia/Bangkok')
+    ukraine_tz = pytz.timezone('Europe/Kiev')
+
+    today_events, tomorrow_events = get_calendar_events()
+
+    if not today_events and not tomorrow_events:
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Немає подій на сьогодні та завтра з кольором ID 5.')
     else:
-        message = "Події на сьогодні та завтра:\n"
-        for event in events:
-            message += f"- {event['summary']}\n"
+        message = "Події на сьогодні:\n"
+        for event in today_events:
+            message += f"- {format_event(event, thailand_tz, ukraine_tz)}\n"
+
+        message += "\nПодії на завтра:\n"
+        for event in tomorrow_events:
+            message += f"- {format_event(event, thailand_tz, ukraine_tz)}\n"
+
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-    TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL').rstrip('/')
 
     updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
@@ -71,12 +103,7 @@ def main():
     # Command to fetch events
     dispatcher.add_handler(CommandHandler('getevents', send_events))
 
-    # Start the webhook
-    updater.start_webhook(listen="0.0.0.0",
-                          port=443,
-                          url_path=TELEGRAM_BOT_TOKEN,
-                          webhook_url=f"{TELEGRAM_WEBHOOK_URL}/{TELEGRAM_BOT_TOKEN}")
-
+    updater.start_polling()
     updater.idle()
 
 if __name__ == '__main__':
