@@ -1,10 +1,10 @@
 import os
 import datetime
-import pytz
 import json
+import pytz
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from telegram import Update
+from telegram import Update, Bot, ParseMode
 from telegram.ext import CommandHandler, Updater, CallbackContext
 
 # Define the scopes for Google Calendar API
@@ -47,9 +47,23 @@ def get_calendar_events(time_min, time_max):
 def format_event(event, thailand_tz, ukraine_tz):
     """Formats the event time for display in both Thailand and Ukraine time zones."""
     start_time = datetime.datetime.fromisoformat(event['start'].get('dateTime', event['start'].get('date')))
+    end_time = datetime.datetime.fromisoformat(event['end'].get('dateTime', event['end'].get('date')))
     start_time_thailand = start_time.astimezone(thailand_tz).strftime('%H:%M')
+    end_time_thailand = end_time.astimezone(thailand_tz).strftime('%H:%M')
     start_time_ukraine = start_time.astimezone(ukraine_tz).strftime('%H:%M')
-    return f"{event['summary']} - Таїланд: {start_time_thailand}, Україна: {start_time_ukraine}"
+    end_time_ukraine = end_time.astimezone(ukraine_tz).strftime('%H:%M')
+
+    location = event.get('location', '')
+    hangout_link = event.get('hangoutLink', '')
+
+    location_info = f"Місце: {location}" if location else f"Посилання на зустріч: {hangout_link}" if hangout_link else ""
+
+    return (
+        f"*{event['summary']}*\n"
+        f"Час у Таїланді: {start_time_thailand} - {end_time_thailand}\n"
+        f"Час в Україні: {start_time_ukraine} - {end_time_ukraine}\n"
+        f"{location_info}\n"
+    )
 
 def send_today_tomorrow_events(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's events to the Telegram chat."""
@@ -80,13 +94,13 @@ def send_today_tomorrow_events(update: Update, context: CallbackContext):
     else:
         message = "Події на сьогодні:\n"
         for event in today_events:
-            message += f"- {format_event(event, thailand_tz, ukraine_tz)}\n"
+            message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
 
         message += "\nПодії на завтра:\n"
         for event in tomorrow_events:
-            message += f"- {format_event(event, thailand_tz, ukraine_tz)}\n"
+            message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
 
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN)
 
 def send_week_events(update: Update, context: CallbackContext):
     """Sends all events for the current week to the Telegram chat."""
@@ -106,10 +120,20 @@ def send_week_events(update: Update, context: CallbackContext):
         bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Немає подій на цей тиждень з кольором ID 5.')
     else:
         message = "Події на цей тиждень:\n"
-        for event in events:
-            message += f"- {format_event(event, thailand_tz, ukraine_tz)}\n"
+        days_of_week = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя']
+        current_day = None
 
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+        for event in events:
+            event_day = event['start'].get('dateTime', event['start'].get('date'))
+            event_day = datetime.datetime.fromisoformat(event_day).astimezone(thailand_tz).weekday()
+
+            if current_day != event_day:
+                current_day = event_day
+                message += f"\n*{days_of_week[current_day]}:*\n"
+
+            message += f"{format_event(event, thailand_tz, ukraine_tz)}\n"
+
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN)
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
