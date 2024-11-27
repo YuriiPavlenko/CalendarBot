@@ -1,13 +1,13 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import CallbackContext
 
 def start(update: Update, context: CallbackContext):
-    """Sends a message with buttons to interact with the bot."""
-    keyboard = [
-        [InlineKeyboardButton("Події на сьогодні та завтра", callback_data='getevents')],
-        [InlineKeyboardButton("Події на цей тиждень", callback_data='getweekevents')]
-    ]
+    """Sends a greeting message to the user."""
+    # Greeting message
+    greeting_message = (
+        "Привіт! Я ваш бот для календаря. "
+        "Використовуйте меню команд, щоб взаємодіяти зі мною."
+    )
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    update.message.reply_text('Виберіть команду:', reply_markup=reply_markup) 
+    # Send the greeting message
+    update.message.reply_text(greeting_message) 
