@@ -7,9 +7,31 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from telegram import Update, Bot
 from telegram.ext import CommandHandler, Updater, CallbackContext
+import json
 
 # Define the scopes for Google Calendar API
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+
+def get_credentials():
+    """Constructs Google API credentials from environment variables."""
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+    redirect_uris = json.loads(os.getenv('GOOGLE_REDIRECT_URIS', '[]'))
+    token_uri = os.getenv('GOOGLE_TOKEN_URI')
+
+    credentials_info = {
+        "installed": {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uris": redirect_uris,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": token_uri
+        }
+    }
+
+    flow = InstalledAppFlow.from_client_config(credentials_info, SCOPES)
+    creds = flow.run_local_server(port=0)
+    return creds
 
 def get_calendar_events():
     """Fetches today's and tomorrow's events with color ID 5 from the Google Calendar."""
@@ -21,9 +43,7 @@ def get_calendar_events():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
+            creds = get_credentials()
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
 
