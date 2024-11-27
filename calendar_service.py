@@ -12,7 +12,7 @@ def get_service_account_credentials():
     credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     return credentials
 
-def get_calendar_events(time_min, time_max):
+def get_calendar_meetings(time_min, time_max):
     """Fetches events with color ID 5 from the Google Calendar within a specified time range."""
     creds = get_service_account_credentials()
     service = build('calendar', 'v3', credentials=creds)
