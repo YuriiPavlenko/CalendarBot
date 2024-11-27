@@ -14,6 +14,7 @@ def handle_message(update, context):
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+    TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL')  # Set this to your app's URL
 
     updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
@@ -31,7 +32,14 @@ def main():
     # Handle custom keyboard inputs
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    updater.start_polling()
+    # Start the webhook
+    updater.start_webhook(
+        listen="0.0.0.0",
+        port=8443,  # Use a port that your server can listen to
+        url_path=TELEGRAM_BOT_TOKEN,
+        webhook_url=f"{TELEGRAM_WEBHOOK_URL}/{TELEGRAM_BOT_TOKEN}"
+    )
+
     updater.idle()
 
 if __name__ == '__main__':
