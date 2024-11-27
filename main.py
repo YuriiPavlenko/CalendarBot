@@ -17,7 +17,7 @@ def get_service_account_credentials():
     return credentials
 
 def get_calendar_events():
-    """Fetches today's and tomorrow's events with color ID 5 from the Google Calendar."""
+    """Fetches today's and tomorrow's events from a shared Google Calendar."""
     creds = get_service_account_credentials()
     service = build('calendar', 'v3', credentials=creds)
 
@@ -28,8 +28,10 @@ def get_calendar_events():
     end_of_tomorrow = start_of_today + datetime.timedelta(days=2)
 
     try:
+        # Use the specific calendar ID of the shared calendar
+        calendar_id = 'hmerijes@gmail.com'
         events_result = service.events().list(
-            calendarId='primary',
+            calendarId=calendar_id,
             timeMin=start_of_today.isoformat(),
             timeMax=end_of_tomorrow.isoformat(),
             singleEvents=True,
@@ -39,15 +41,7 @@ def get_calendar_events():
         events = events_result.get('items', [])
         print("Fetched events:", events)  # Debugging line
 
-        # Filter events by color ID 5
-        filtered_events = [event for event in events if event.get('colorId') == '5']
-        print("Filtered events:", filtered_events)  # Debugging line
-
-        print("Time range:", start_of_today.isoformat(), "to", end_of_tomorrow.isoformat())
-
-        print("API response:", events_result)
-
-        return filtered_events
+        return events
 
     except Exception as e:
         print("Error fetching events:", e)
