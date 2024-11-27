@@ -5,7 +5,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-import telegram as ptb  # Alias the python-telegram-bot package
+from telegram import Bot
 from telegram.ext import CommandHandler, Updater, CallbackContext
 
 # Define the scopes for Google Calendar API
@@ -48,16 +48,19 @@ def get_calendar_events():
 
     return filtered_events
 
-def send_events(update: ptb.Update, context: CallbackContext):
+def send_events(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's events to the Telegram chat."""
+    TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+    bot = context.bot
+
     events = get_calendar_events()
     if not events:
-        update.message.reply_text('Немає подій на сьогодні та завтра з кольором ID 5.')
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Немає подій на сьогодні та завтра з кольором ID 5.')
     else:
         message = "Події на сьогодні та завтра:\n"
         for event in events:
             message += f"- {event['summary']}\n"
-        update.message.reply_text(message)
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
 
 def main():
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
