@@ -7,13 +7,13 @@ from commands.today_tomorrow import send_today_tomorrow_meetings
 from commands.week import send_week_meetings
 from commands.next_week import send_next_week_meetings
 from commands.start import start
-from commands.settings import user_languages
+from commands.settings import get_user_language
 from database import initialize_db
 
 def handle_message(update, context):
     text = update.message.text
     user_id = update.effective_user.id
-    language = user_languages.get(user_id, 'uk')  # Default to Ukrainian
+    language = get_user_language(user_id)  # Retrieve language from the database
 
     if text == 'Зустрічі на сьогодні':
         send_today_meetings(update, context)
