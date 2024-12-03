@@ -43,8 +43,13 @@ def set_language(update, context):
 
     # Refresh the command descriptions based on the new language
     texts = get_texts(language)
-    command_descriptions = texts['command_descriptions']
-    context.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
+    command_descriptions = texts['command_descriptions'] + [("settings", texts['settings_command'])]
+    
+    try:
+        context.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
+        logging.info(f"Commands updated for user {user_id} with language {language}")
+    except Exception as e:
+        logging.error(f"Error updating commands for user {user_id}: {e}")
 
     query.edit_message_text(text=texts['language_set'])
 
@@ -58,7 +63,8 @@ def main():
 
     # Set bot commands for the menu based on the default language
     default_language = 'uk'  # Set your default language here
-    command_descriptions = get_texts(default_language)['command_descriptions']
+    texts = get_texts(default_language)
+    command_descriptions = texts['command_descriptions'] + [("settings", texts['settings_command'])]
     updater.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
 
     # Command to start the bot and show buttons
