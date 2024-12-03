@@ -1,5 +1,5 @@
 def get_texts(language):
-    return {
+    texts = {
         'uk': {
             'no_meetings': "Немає зустрічей.",
             'meetings_today': "Зустрічі на сьогодні:\n",
@@ -97,3 +97,4 @@ def get_texts(language):
             ]
         }
     }
+    return texts[language]
