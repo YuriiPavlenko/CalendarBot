@@ -1,6 +1,7 @@
 def get_texts(language):
     return {
         'en': {
+            'greeting': "Hello! Welcome to the bot.",
             'no_meetings': "No meetings.",
             'meetings_today': "Meetings for today:\n",
             'meetings_tomorrow': "Meetings for tomorrow:\n",
@@ -16,6 +17,9 @@ def get_texts(language):
             'attendants': "Attendants",
             'location': "Location",
             'meet_link': "Meet Link",
+            'restart_notice': "Please restart the app to update the menu.",
+            'available_commands': "Here are the available commands:",
+            'menu_notice': "You can also find these commands in the menu.",
             'command_descriptions': [
                 ("start", "Start interacting with the bot"),
                 ("today", "Get today's meetings"),
@@ -27,6 +31,7 @@ def get_texts(language):
             ]
         },
         'ru': {
+            'greeting': "Здравствуйте! Добро пожаловать в бота.",
             'no_meetings': "Нет встреч.",
             'meetings_today': "Встречи на сегодня:\n",
             'meetings_tomorrow': "Встречи на завтра:\n",
@@ -42,6 +47,9 @@ def get_texts(language):
             'attendants': "Участники",
             'location': "Место",
             'meet_link': "Ссылка на встречу",
+            'restart_notice': "Пожалуйста, перезапустите приложение, чтобы обновить меню.",
+            'available_commands': "Вот доступные команды:",
+            'menu_notice': "Вы также можете найти эти команды в меню.",
             'command_descriptions': [
                 ("start", "Начать взаимодействие с ботом"),
                 ("today", "Получить встречи на сегодня"),
@@ -53,6 +61,7 @@ def get_texts(language):
             ]
         },
         'uk': {
+            'greeting': "Привіт! Ласкаво просимо до бота.",
             'no_meetings': "Немає зустрічей.",
             'meetings_today': "Зустрічі на сьогодні:\n",
             'meetings_tomorrow': "Зустрічі на завтра:\n",
@@ -68,6 +77,9 @@ def get_texts(language):
             'attendants': "Учасники",
             'location': "Місце",
             'meet_link': "Посилання на зустріч",
+            'restart_notice': "Будь ласка, перезапустіть додаток, щоб оновити меню.",
+            'available_commands': "Ось доступні команди:",
+            'menu_notice': "Ви також можете знайти ці команди в меню.",
             'command_descriptions': [
                 ("start", "Почати взаємодію з ботом"),
                 ("today", "Отримати зустрічі на сьогодні"),
@@ -79,12 +91,13 @@ def get_texts(language):
             ]
         },
         'th': {
+            'greeting': "สวัสดี! ยินดีต้อนรับสู่บอท.",
             'no_meetings': "ไม่มีการประชุม.",
             'meetings_today': "การประชุมสำหรับวันนี้:\n",
             'meetings_tomorrow': "การประชุมสำหรับพรุ่งนี้:\n",
             'meetings_next_week': "การประชุมสำหรับสัปดาห์หน้า:\n",
             'meetings_this_week': "การประชุมสำหรับสัปดาห์นี้:\n",
-            'days_of_week': ['���ันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์', 'วันอาทิตย์'],
+            'days_of_week': ['วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์', 'วันอาทิตย์'],
             'language_set': "ตั้งค่าภาษาเป็นภาษาไทยแล้ว.",
             'choose_language': "กรุณาเลือกภาษาของคุณ:",
             'settings_command': "เปลี่ยนการตั้งค่าภาษา",
@@ -94,6 +107,9 @@ def get_texts(language):
             'attendants': "ผู้เข้าร่วม",
             'location': "สถานที่",
             'meet_link': "ลิงก์การประชุม",
+            'restart_notice': "กรุณารีสตาร์ทแอปเพื่ออัปเดตเมนู.",
+            'available_commands': "นี่คือคำสั่งที่ใช้ได้:",
+            'menu_notice': "คุณยังสามารถค้นหาคำสั่งเหล่านี้ในเมนู.",
             'command_descriptions': [
                 ("start", "เริ่มต้นการโต้ตอบกับบอท"),
                 ("today", "รับการประชุมของวันนี้"),
