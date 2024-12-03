@@ -9,7 +9,7 @@ from utils.database import initialize_db
 
 logging.basicConfig(level=logging.INFO)
 
-async def main():
+def main():
     initialize_db()  # Initialize the database
 
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -28,11 +28,15 @@ async def main():
     application.add_handler(CommandHandler('create_meeting', create_meeting))
 
     # Set webhook
-    await application.bot.set_webhook(url=TELEGRAM_WEBHOOK_URL)
+    application.bot.set_webhook(url=TELEGRAM_WEBHOOK_URL)
 
     # Start the application
-    await application.start()
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get('PORT', 443)),
+        url_path=TELEGRAM_BOT_TOKEN,
+        webhook_url=f"{TELEGRAM_WEBHOOK_URL}/{TELEGRAM_BOT_TOKEN}"
+    )
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
