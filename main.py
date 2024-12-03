@@ -8,8 +8,8 @@ from commands.today_tomorrow import send_today_tomorrow_meetings
 from commands.week import send_week_meetings
 from commands.next_week import send_next_week_meetings
 from commands.start import start
-from commands.settings import get_user_language, settings, set_language
-from database import initialize_db, update_user_language
+from commands.settings import get_user_language, settings, set_language, update_user_language
+from database import initialize_db
 from localization import get_texts
 
 logging.basicConfig(level=logging.INFO)
