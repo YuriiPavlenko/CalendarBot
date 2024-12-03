@@ -1,6 +1,6 @@
 import os
 import logging
-from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
+from telegram.ext import CommandHandler, Updater, MessageHandler, Filters, CallbackQueryHandler
 from telegram import BotCommand
 from commands.today import send_today_meetings
 from commands.tomorrow import send_tomorrow_meetings
@@ -8,7 +8,7 @@ from commands.today_tomorrow import send_today_tomorrow_meetings
 from commands.week import send_week_meetings
 from commands.next_week import send_next_week_meetings
 from commands.start import start
-from commands.settings import get_user_language
+from commands.settings import get_user_language, settings, set_language
 from database import initialize_db
 
 logging.basicConfig(level=logging.INFO)
@@ -87,6 +87,12 @@ def main():
     dispatcher.add_handler(CommandHandler('today_tomorrow', send_today_tomorrow_meetings))
     dispatcher.add_handler(CommandHandler('week', send_week_meetings))
     dispatcher.add_handler(CommandHandler('next_week', send_next_week_meetings))
+
+    # Command handler for settings
+    dispatcher.add_handler(CommandHandler('settings', settings))
+
+    # Callback query handler for language selection
+    dispatcher.add_handler(CallbackQueryHandler(set_language))
 
     # Handle custom keyboard inputs
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
