@@ -3,13 +3,13 @@ import pytz
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from calendar_service import get_calendar_meetings
-from commands.settings import user_languages
+from commands.settings import get_user_language
 
 def send_tomorrow_meetings(update: Update, context: CallbackContext):
     """Sends tomorrow's meetings to the Telegram chat."""
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
-    language = user_languages.get(user_id, 'uk')  # Default to Ukrainian
+    language = get_user_language(user_id)
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
