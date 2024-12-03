@@ -22,20 +22,22 @@ def send_next_week_meetings(update: Update, context: CallbackContext):
 
     next_week_meetings = get_calendar_meetings(start_of_next_week, end_of_next_week)
 
-    if not next_week_meetings:
-        context.bot.send_message(chat_id=chat_id, text=texts['no_meetings'])
-    else:
-        message = texts['meetings_next_week']
-        days_of_week = texts['days_of_week']
-        current_day = None
+    message = f"**{texts['meetings_next_week'].strip().upper()}**\n\n"
+    days_of_week = texts['days_of_week']
+    current_day = None
+    day_meetings = {i: [] for i in range(7)}
 
-        for meeting in next_week_meetings:
-            meeting_day = meeting.start.astimezone(thailand_tz).weekday()
+    for meeting in next_week_meetings:
+        meeting_day = meeting.start.astimezone(thailand_tz).weekday()
+        day_meetings[meeting_day].append(meeting)
 
-            if current_day != meeting_day:
-                current_day = meeting_day
-                message += f"\n*{days_of_week[current_day]}:*\n"
+    for day in range(7):
+        message += f"**{days_of_week[day].upper()}**\n\n"
+        if not day_meetings[day]:
+            message += texts['no_meetings'] + "\n\n"
+        else:
+            for meeting in day_meetings[day]:
+                message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
+            message += "\n"
 
-            message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
-
-        context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 
+    context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 
