@@ -3,6 +3,7 @@ import json
 import datetime
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from localization import get_texts
 
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
@@ -29,58 +30,22 @@ class Meeting:
         start_time_ukraine = self.start.astimezone(ukraine_tz).strftime('%H:%M')
         end_time_ukraine = self.end.astimezone(ukraine_tz).strftime('%H:%M')
 
-        # Language-specific text
-        texts = {
-            'uk': {
-                'time_thailand': "Час у Таїланді",
-                'time_ukraine': "Час в Україні",
-                'goal': "Мета",
-                'attendants': "Учасники",
-                'location': "Місце",
-                'meet_link': "Посилання на зустріч"
-            },
-            'ru': {
-                'time_thailand': "Время в Таиланде",
-                'time_ukraine': "Время в Украине",
-                'goal': "Цель",
-                'attendants': "Участники",
-                'location': "Место",
-                'meet_link': "Ссылка на встречу"
-            },
-            'en': {
-                'time_thailand': "Time in Thailand",
-                'time_ukraine': "Time in Ukraine",
-                'goal': "Goal",
-                'attendants': "Attendants",
-                'location': "Location",
-                'meet_link': "Meeting Link"
-            },
-            'th': {
-                'time_thailand': "เวลาในประเทศไทย",
-                'time_ukraine': "เวลาในยูเครน",
-                'goal': "เป้าหมาย",
-                'attendants': "ผู้เข้าร่วม",
-                'location': "สถานที่",
-                'meet_link': "ลิงก์การประชุม"
-            }
-        }
-
-        text = texts[language]
+        texts = get_texts(language)
 
         formatted_meeting = (
             f"*{self.summary}*\n"
-            f"{text['time_thailand']}: {start_time_thailand} - {end_time_thailand}\n"
-            f"{text['time_ukraine']}: {start_time_ukraine} - {end_time_ukraine}\n"
+            f"{texts['time_thailand']}: {start_time_thailand} - {end_time_thailand}\n"
+            f"{texts['time_ukraine']}: {start_time_ukraine} - {end_time_ukraine}\n"
         )
 
         if self.goal:
-            formatted_meeting += f"{text['goal']}: {self.goal}\n"
+            formatted_meeting += f"{texts['goal']}: {self.goal}\n"
         if self.attendants:
-            formatted_meeting += f"{text['attendants']}: {', '.join(self.attendants)}\n"
+            formatted_meeting += f"{texts['attendants']}: {', '.join(self.attendants)}\n"
         if self.location:
-            formatted_meeting += f"{text['location']}: {self.location}\n"
+            formatted_meeting += f"{texts['location']}: {self.location}\n"
         if self.meet_link:
-            formatted_meeting += f"{text['meet_link']}: {self.meet_link}\n"
+            formatted_meeting += f"{texts['meet_link']}: {self.meet_link}\n"
 
         return formatted_meeting
 

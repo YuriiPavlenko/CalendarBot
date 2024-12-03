@@ -4,12 +4,14 @@ from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from calendar_service import get_calendar_meetings
 from commands.settings import get_user_language
+from localization import get_texts
 
 def send_today_tomorrow_meetings(update: Update, context: CallbackContext):
     """Sends today's and tomorrow's meetings to the Telegram chat."""
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     language = get_user_language(user_id)
+    texts = get_texts(language)
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
@@ -31,13 +33,13 @@ def send_today_tomorrow_meetings(update: Update, context: CallbackContext):
             tomorrow_meetings.append(meeting)
 
     if not today_meetings and not tomorrow_meetings:
-        context.bot.send_message(chat_id=chat_id, text="No meetings found.")
+        context.bot.send_message(chat_id=chat_id, text=texts['no_meetings'])
     else:
-        message = "Meetings for today:\n"
+        message = texts['meetings_today']
         for meeting in today_meetings:
             message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
 
-        message += "\nMeetings for tomorrow:\n"
+        message += "\n" + texts['meetings_tomorrow']
         for meeting in tomorrow_meetings:
             message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
 

@@ -10,6 +10,7 @@ from commands.next_week import send_next_week_meetings
 from commands.start import start
 from commands.settings import get_user_language, settings, set_language
 from database import initialize_db
+from localization import get_texts
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,18 +18,19 @@ def handle_message(update, context):
     text = update.message.text
     user_id = update.effective_user.id
     language = get_user_language(user_id)  # Retrieve language from the database
+    texts = get_texts(language)
 
     logging.info(f"User {user_id} sent message: {text} in language: {language}")
 
-    if text == 'Зустрічі на сьогодні':
+    if text == texts['meetings_today']:
         send_today_meetings(update, context)
-    elif text == 'Зустрічі на завтра':
+    elif text == texts['meetings_tomorrow']:
         send_tomorrow_meetings(update, context)
-    elif text == 'Зустрічі на сьогодні та завтра':
+    elif text == texts['meetings_today'] + " та " + texts['meetings_tomorrow']:
         send_today_tomorrow_meetings(update, context)
-    elif text == 'Зустрічі на цей тиждень':
+    elif text == texts['meetings_this_week']:
         send_week_meetings(update, context)
-    elif text == 'Зустрічі на наступний тиждень':
+    elif text == texts['meetings_next_week']:
         send_next_week_meetings(update, context)
 
 def main():
@@ -39,44 +41,10 @@ def main():
     updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
     dispatcher = updater.dispatcher
 
-    # Language-specific command descriptions
-    command_descriptions = {
-        'uk': [
-            BotCommand("start", "Почати взаємодію з ботом"),
-            BotCommand("today", "Отримати зустрічі на сьогодні"),
-            BotCommand("tomorrow", "Отримати зустрічі на завтра"),
-            BotCommand("today_tomorrow", "Отримати зустрічі на сьогодні та завтра"),
-            BotCommand("week", "Отримати зустрічі на цей тиждень"),
-            BotCommand("next_week", "Отримати зустрічі на наступний тиждень")
-        ],
-        'ru': [
-            BotCommand("start", "Начать взаимодействие с ботом"),
-            BotCommand("today", "Получить встречи на сегодня"),
-            BotCommand("tomorrow", "Получить встречи на завтра"),
-            BotCommand("today_tomorrow", "Получить встречи на сегодня и завтра"),
-            BotCommand("week", "Получить встречи на эту неделю"),
-            BotCommand("next_week", "Получить встречи на следующую неделю")
-        ],
-        'en': [
-            BotCommand("start", "Start interacting with the bot"),
-            BotCommand("today", "Get today's meetings"),
-            BotCommand("tomorrow", "Get tomorrow's meetings"),
-            BotCommand("today_tomorrow", "Get today's and tomorrow's meetings"),
-            BotCommand("week", "Get this week's meetings"),
-            BotCommand("next_week", "Get next week's meetings")
-        ],
-        'th': [
-            BotCommand("start", "เริ่มโต้ตอบกับบอท"),
-            BotCommand("today", "รับการประชุมวันนี้"),
-            BotCommand("tomorrow", "รับการประชุมพรุ่งนี้"),
-            BotCommand("today_tomorrow", "รับการประชุมวันนี้และพรุ่งนี้"),
-            BotCommand("week", "รับการประชุมสัปดาห์นี้"),
-            BotCommand("next_week", "รับการประชุมสัปดาห์หน้า")
-        ]
-    }
-
     # Set bot commands for the menu based on the default language
-    updater.bot.set_my_commands(command_descriptions['uk'])
+    default_language = 'en'  # Set your default language here
+    command_descriptions = get_texts(default_language)['command_descriptions']
+    updater.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
 
     # Command to start the bot and show buttons
     dispatcher.add_handler(CommandHandler('start', start))

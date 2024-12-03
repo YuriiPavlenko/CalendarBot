@@ -1,11 +1,15 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from database import get_db_connection
 import logging
+from localization import get_texts
 
 logging.basicConfig(level=logging.INFO)
 
 def settings(update, context):
     """Allows the user to choose a language."""
+    language = get_user_language(update.effective_user.id)
+    texts = get_texts(language)
+
     keyboard = [
         [InlineKeyboardButton("Українська", callback_data='lang_uk')],
         [InlineKeyboardButton("Русский", callback_data='lang_ru')],
@@ -13,7 +17,7 @@ def settings(update, context):
         [InlineKeyboardButton("ไทย", callback_data='lang_th')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Будь ласка, оберіть свою мову:', reply_markup=reply_markup)
+    update.message.reply_text(texts['choose_language'], reply_markup=reply_markup)
 
 def set_language(update, context):
     query = update.callback_query
@@ -40,7 +44,8 @@ def set_language(update, context):
         logging.info("Database connection closed")
 
     try:
-        query.edit_message_text(text=f"Мова встановлена на {language}.")
+        texts = get_texts(language)
+        query.edit_message_text(text=texts['language_set'].format(language=language))
         logging.info(f"Confirmation message sent to user {user_id}")
     except Exception as e:
         logging.error(f"Error sending confirmation message to user {user_id}: {e}")

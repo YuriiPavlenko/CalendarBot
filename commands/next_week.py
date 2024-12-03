@@ -4,12 +4,14 @@ from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from calendar_service import get_calendar_meetings
 from commands.settings import get_user_language
+from localization import get_texts
 
 def send_next_week_meetings(update: Update, context: CallbackContext):
     """Sends next week's meetings to the Telegram chat."""
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     language = get_user_language(user_id)
+    texts = get_texts(language)
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
@@ -21,10 +23,10 @@ def send_next_week_meetings(update: Update, context: CallbackContext):
     next_week_meetings = get_calendar_meetings(start_of_next_week, end_of_next_week)
 
     if not next_week_meetings:
-        context.bot.send_message(chat_id=chat_id, text="No meetings found.")
+        context.bot.send_message(chat_id=chat_id, text=texts['no_meetings'])
     else:
-        message = "Meetings for next week:\n"
-        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        message = texts['meetings_next_week']
+        days_of_week = texts['days_of_week']
         current_day = None
 
         for meeting in next_week_meetings:
