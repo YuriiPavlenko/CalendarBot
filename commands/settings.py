@@ -21,10 +21,11 @@ def set_language(update, context):
     user_id = query.from_user.id
     language = query.data.split('_')[1]
 
-    logging.info(f"Attempting to set language for user {user_id} to {language}")
+    logging.info(f"User {user_id} clicked to set language to {language}")
 
     try:
         conn = get_db_connection()
+        logging.info("Database connection established")
         with conn:
             conn.execute('''
                 INSERT INTO user_languages (user_id, language)
@@ -36,14 +37,20 @@ def set_language(update, context):
         logging.error(f"Error setting language for user {user_id}: {e}")
     finally:
         conn.close()
+        logging.info("Database connection closed")
 
-    query.edit_message_text(text=f"Мова встановлена на {language}.")
+    try:
+        query.edit_message_text(text=f"Мова встановлена на {language}.")
+        logging.info(f"Confirmation message sent to user {user_id}")
+    except Exception as e:
+        logging.error(f"Error sending confirmation message to user {user_id}: {e}")
 
 def get_user_language(user_id):
     logging.info(f"Retrieving language for user {user_id}")
     language = 'uk'  # Default to Ukrainian
     try:
         conn = get_db_connection()
+        logging.info("Database connection established for retrieval")
         with conn:
             row = conn.execute('SELECT language FROM user_languages WHERE user_id = ?', (user_id,)).fetchone()
             if row:
@@ -55,4 +62,5 @@ def get_user_language(user_id):
         logging.error(f"Error retrieving language for user {user_id}: {e}")
     finally:
         conn.close()
+        logging.info("Database connection closed after retrieval")
     return language
