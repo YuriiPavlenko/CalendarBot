@@ -1,4 +1,5 @@
 import os
+import logging
 from telegram.ext import CommandHandler, Updater, MessageHandler, Filters
 from telegram import BotCommand
 from commands.today import send_today_meetings
@@ -10,10 +11,14 @@ from commands.start import start
 from commands.settings import get_user_language
 from database import initialize_db
 
+logging.basicConfig(level=logging.INFO)
+
 def handle_message(update, context):
     text = update.message.text
     user_id = update.effective_user.id
     language = get_user_language(user_id)  # Retrieve language from the database
+
+    logging.info(f"User {user_id} sent message: {text} in language: {language}")
 
     if text == 'Зустрічі на сьогодні':
         send_today_meetings(update, context)
