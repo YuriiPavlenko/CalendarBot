@@ -30,7 +30,7 @@ def main():
     # Set webhook
     application.run_webhook(
         listen="0.0.0.0",
-        port=int(os.environ.get('PORT', 443)),
+        port=443,
         url_path=TELEGRAM_BOT_TOKEN,
         webhook_url=f"{TELEGRAM_WEBHOOK_URL}/{TELEGRAM_BOT_TOKEN}"
     )
