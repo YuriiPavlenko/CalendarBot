@@ -70,6 +70,9 @@ def main():
     # Command to start the bot and show buttons
     dispatcher.add_handler(CommandHandler('start', start))
 
+    # Add language choice handler
+    add_language_choice_handler(dispatcher)
+
     # Command handlers for functional commands
     dispatcher.add_handler(CommandHandler('today', send_today_meetings))
     dispatcher.add_handler(CommandHandler('tomorrow', send_tomorrow_meetings))
