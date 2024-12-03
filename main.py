@@ -13,6 +13,8 @@ async def main():
     initialize_db()  # Initialize the database
 
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+    TELEGRAM_WEBHOOK_URL = os.getenv('TELEGRAM_WEBHOOK_URL')  # Ensure this is set in your environment
+
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     # Command handlers
@@ -25,8 +27,11 @@ async def main():
     application.add_handler(CommandHandler('unsubscribe_notifications', unsubscribe_notifications))
     application.add_handler(CommandHandler('create_meeting', create_meeting))
 
-    # Start the bot
-    await application.run_polling()
+    # Set webhook
+    await application.bot.set_webhook(url=TELEGRAM_WEBHOOK_URL)
+
+    # Start the application
+    await application.start()
 
 if __name__ == '__main__':
     import asyncio
