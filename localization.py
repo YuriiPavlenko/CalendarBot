@@ -49,7 +49,7 @@ def get_texts(language):
             ]
         },
         'en': {
-            'no_meetings': "No meetings found.",
+            'no_meetings': "No meetings.",
             'meetings_today': "Meetings for today:\n",
             'meetings_tomorrow': "Meetings for tomorrow:\n",
             'meetings_next_week': "Meetings for next week:\n",

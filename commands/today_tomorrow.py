@@ -32,15 +32,19 @@ def send_today_tomorrow_meetings(update: Update, context: CallbackContext):
         elif start_of_today + datetime.timedelta(days=1) <= start_time < end_of_tomorrow:
             tomorrow_meetings.append(meeting)
 
-    if not today_meetings and not tomorrow_meetings:
-        context.bot.send_message(chat_id=chat_id, text=texts['no_meetings'])
+    message = f"**{texts['meetings_today'].strip().upper()}**\n\n"
+    if not today_meetings:
+        message += texts['no_meetings'] + "\n\n"
     else:
-        message = texts['meetings_today']
         for meeting in today_meetings:
             message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
+        message += "\n"
 
-        message += "\n" + texts['meetings_tomorrow']
+    message += f"**{texts['meetings_tomorrow'].strip().upper()}**\n\n"
+    if not tomorrow_meetings:
+        message += texts['no_meetings'] + "\n\n"
+    else:
         for meeting in tomorrow_meetings:
             message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
 
-        context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 
+    context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 
