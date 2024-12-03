@@ -28,9 +28,6 @@ def main():
     application.add_handler(CommandHandler('create_meeting', create_meeting))
 
     # Set webhook
-    application.bot.set_webhook(url=TELEGRAM_WEBHOOK_URL)
-
-    # Start the application
     application.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get('PORT', 443)),
@@ -39,4 +36,5 @@ def main():
     )
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
