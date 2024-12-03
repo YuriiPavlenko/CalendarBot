@@ -32,7 +32,7 @@ def send_week_meetings(update: Update, context: CallbackContext):
         day_meetings[meeting_day].append(meeting)
 
     for day in range(7):
-        message += f"**{days_of_week[day].upper()}**\n\n"
+        message += f"*{days_of_week[day].upper()}*:\n\n"
         if not day_meetings[day]:
             message += texts['no_meetings'] + "\n\n"
         else:

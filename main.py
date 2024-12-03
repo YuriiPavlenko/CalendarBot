@@ -33,6 +33,21 @@ def handle_message(update, context):
     elif text == texts['meetings_next_week']:
         send_next_week_meetings(update, context)
 
+def set_language(update, context):
+    query = update.callback_query
+    user_id = update.effective_user.id
+    language = query.data
+
+    # Update the user's language in the database
+    update_user_language(user_id, language)
+
+    # Refresh the command descriptions based on the new language
+    texts = get_texts(language)
+    command_descriptions = texts['command_descriptions']
+    context.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
+
+    query.edit_message_text(text=texts['language_set'])
+
 def main():
     initialize_db()  # Initialize the database
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')

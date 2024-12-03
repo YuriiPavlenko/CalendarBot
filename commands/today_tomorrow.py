@@ -32,7 +32,7 @@ def send_today_tomorrow_meetings(update: Update, context: CallbackContext):
         elif start_of_today + datetime.timedelta(days=1) <= start_time < end_of_tomorrow:
             tomorrow_meetings.append(meeting)
 
-    message = f"**{texts['meetings_today'].strip().upper()}**\n\n"
+    message = f"*{texts['meetings_today'].strip().upper()}*\n\n"
     if not today_meetings:
         message += texts['no_meetings'] + "\n\n"
     else:
@@ -40,7 +40,7 @@ def send_today_tomorrow_meetings(update: Update, context: CallbackContext):
             message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
         message += "\n"
 
-    message += f"**{texts['meetings_tomorrow'].strip().upper()}**\n\n"
+    message += f"*{texts['meetings_tomorrow'].strip().upper()}*\n\n"
     if not tomorrow_meetings:
         message += texts['no_meetings'] + "\n\n"
     else:
