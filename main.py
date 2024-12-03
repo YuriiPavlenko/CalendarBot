@@ -7,7 +7,7 @@ from commands.tomorrow import send_tomorrow_meetings
 from commands.today_tomorrow import send_today_tomorrow_meetings
 from commands.week import send_week_meetings
 from commands.next_week import send_next_week_meetings
-from commands.start import start
+from commands.start import start, add_language_choice_handler
 from commands.settings import get_user_language, settings, set_language, update_user_language
 from database import initialize_db
 from localization import get_texts
