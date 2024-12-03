@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from database import get_db_connection
 import logging
 from localization import get_texts
@@ -39,31 +39,20 @@ def settings(update, context):
 
 def set_language(update, context):
     query = update.callback_query
-    query.answer()
-    user_id = query.from_user.id
-    language = query.data.split('_')[1]
+    user_id = update.effective_user.id
+    language = query.data
 
-    logging.info(f"User {user_id} clicked to set language to {language}")
+    # Update the user's language in the database
+    update_user_language(user_id, language)
 
+    # Refresh the command descriptions based on the new language
+    texts = get_texts(language)
+    command_descriptions = texts['command_descriptions']
+    
     try:
-        conn = get_db_connection()
-        logging.info("Database connection established")
-        with conn:
-            conn.execute('''
-                INSERT INTO user_languages (user_id, language)
-                VALUES (?, ?)
-                ON CONFLICT(user_id) DO UPDATE SET language=excluded.language
-            ''', (user_id, language))
-        logging.info(f"Successfully set language for user {user_id} to {language}")
+        context.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
+        logging.info(f"Commands updated for user {user_id} with language {language}")
     except Exception as e:
-        logging.error(f"Error setting language for user {user_id}: {e}")
-    finally:
-        conn.close()
-        logging.info("Database connection closed")
+        logging.error(f"Error updating commands for user {user_id}: {e}")
 
-    try:
-        texts = get_texts(language)
-        query.edit_message_text(text=texts['language_set'].format(language=language))
-        logging.info(f"Confirmation message sent to user {user_id}")
-    except Exception as e:
-        logging.error(f"Error sending confirmation message to user {user_id}: {e}")
+    query.edit_message_text(text=texts['language_set'])
