@@ -21,24 +21,38 @@ def set_language(update, context):
     user_id = query.from_user.id
     language = query.data.split('_')[1]
 
-    conn = get_db_connection()
-    with conn:
-        conn.execute('''
-            INSERT INTO user_languages (user_id, language)
-            VALUES (?, ?)
-            ON CONFLICT(user_id) DO UPDATE SET language=excluded.language
-        ''', (user_id, language))
-    conn.close()
+    logging.info(f"Attempting to set language for user {user_id} to {language}")
 
-    logging.info(f"User {user_id} set language to {language}")
+    try:
+        conn = get_db_connection()
+        with conn:
+            conn.execute('''
+                INSERT INTO user_languages (user_id, language)
+                VALUES (?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET language=excluded.language
+            ''', (user_id, language))
+        logging.info(f"Successfully set language for user {user_id} to {language}")
+    except Exception as e:
+        logging.error(f"Error setting language for user {user_id}: {e}")
+    finally:
+        conn.close()
+
     query.edit_message_text(text=f"Мова встановлена на {language}.")
 
 def get_user_language(user_id):
-    conn = get_db_connection()
+    logging.info(f"Retrieving language for user {user_id}")
     language = 'uk'  # Default to Ukrainian
-    with conn:
-        row = conn.execute('SELECT language FROM user_languages WHERE user_id = ?', (user_id,)).fetchone()
-        if row:
-            language = row['language']
-    conn.close()
+    try:
+        conn = get_db_connection()
+        with conn:
+            row = conn.execute('SELECT language FROM user_languages WHERE user_id = ?', (user_id,)).fetchone()
+            if row:
+                language = row['language']
+                logging.info(f"Retrieved language for user {user_id}: {language}")
+            else:
+                logging.info(f"No language set for user {user_id}, defaulting to Ukrainian")
+    except Exception as e:
+        logging.error(f"Error retrieving language for user {user_id}: {e}")
+    finally:
+        conn.close()
     return language
