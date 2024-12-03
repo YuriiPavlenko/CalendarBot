@@ -22,7 +22,7 @@ def send_tomorrow_meetings(update: Update, context: CallbackContext):
 
     tomorrow_meetings = get_calendar_meetings(start_of_tomorrow, end_of_tomorrow)
 
-    message = f"**{texts['meetings_tomorrow'].strip().upper()}**\n\n"
+    message = f"*{texts['meetings_tomorrow'].strip().upper()}*\n\n"
     if not tomorrow_meetings:
         message += texts['no_meetings']
     else:

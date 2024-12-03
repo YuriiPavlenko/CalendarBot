@@ -22,7 +22,7 @@ def send_week_meetings(update: Update, context: CallbackContext):
 
     meetings = get_calendar_meetings(start_of_week, end_of_week)
 
-    message = f"**{texts['meetings_this_week'].strip().upper()}**\n\n"
+    message = f"*{texts['meetings_this_week'].strip().upper()}*\n\n"
     days_of_week = texts['days_of_week']
     current_day = None
     day_meetings = {i: [] for i in range(7)}
