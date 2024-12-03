@@ -42,7 +42,7 @@ def main():
     dispatcher = updater.dispatcher
 
     # Set bot commands for the menu based on the default language
-    default_language = 'en'  # Set your default language here
+    default_language = 'uk'  # Set your default language here
     command_descriptions = get_texts(default_language)['command_descriptions']
     updater.bot.set_my_commands([BotCommand(cmd, desc) for cmd, desc in command_descriptions])
 
