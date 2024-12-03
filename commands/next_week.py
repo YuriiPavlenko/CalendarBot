@@ -3,11 +3,13 @@ import pytz
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from calendar_service import get_calendar_meetings
-from event_formatter import format_meeting
+from commands.settings import user_languages
 
 def send_next_week_meetings(update: Update, context: CallbackContext):
     """Sends next week's meetings to the Telegram chat."""
     chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    language = user_languages.get(user_id, 'uk')  # Default to Ukrainian
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
@@ -19,20 +21,19 @@ def send_next_week_meetings(update: Update, context: CallbackContext):
     next_week_meetings = get_calendar_meetings(start_of_next_week, end_of_next_week)
 
     if not next_week_meetings:
-        context.bot.send_message(chat_id=chat_id, text='Немає зустрічей на наступний тиждень з кольором ID 5.')
+        context.bot.send_message(chat_id=chat_id, text="No meetings found.")
     else:
-        message = "Зустрічі на наступний тиждень:\n"
-        days_of_week = ['Понеділок', 'Вівторок', 'Середа', 'Четвер', 'П’ятниця', 'Субота', 'Неділя']
+        message = "Meetings for next week:\n"
+        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         current_day = None
 
         for meeting in next_week_meetings:
-            meeting_day = meeting['start'].get('dateTime', meeting['start'].get('date'))
-            meeting_day = datetime.datetime.fromisoformat(meeting_day).astimezone(thailand_tz).weekday()
+            meeting_day = meeting.start.astimezone(thailand_tz).weekday()
 
             if current_day != meeting_day:
                 current_day = meeting_day
                 message += f"\n*{days_of_week[current_day]}:*\n"
 
-            message += f"{format_meeting(meeting, thailand_tz, ukraine_tz)}\n"
+            message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
 
         context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 

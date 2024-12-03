@@ -1,13 +1,8 @@
 from telegram import Update
 from telegram.ext import CallbackContext
+from commands.settings import settings
 
 def start(update: Update, context: CallbackContext):
-    """Sends a greeting message to the user."""
-    # Greeting message
-    greeting_message = (
-        "Привіт! Я ваш бот для календаря. "
-        "Використовуйте меню команд, щоб взаємодіяти зі мною."
-    )
-
-    # Send the greeting message
-    update.message.reply_text(greeting_message) 
+    """Sends a greeting message and asks for language preference."""
+    update.message.reply_text("Welcome! Please choose your language:")
+    settings(update, context) 

@@ -3,11 +3,13 @@ import pytz
 from telegram import Update, ParseMode
 from telegram.ext import CallbackContext
 from calendar_service import get_calendar_meetings
-from event_formatter import format_meeting
+from commands.settings import get_user_language
 
 def send_today_meetings(update: Update, context: CallbackContext):
     """Sends today's meetings to the Telegram chat."""
     chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    language = get_user_language(user_id)  # Retrieve language from the database
 
     thailand_tz = pytz.timezone('Asia/Bangkok')
     ukraine_tz = pytz.timezone('Europe/Kiev')
@@ -19,10 +21,10 @@ def send_today_meetings(update: Update, context: CallbackContext):
     today_meetings = get_calendar_meetings(start_of_today, end_of_today)
 
     if not today_meetings:
-        context.bot.send_message(chat_id=chat_id, text='Немає зустрічей на сьогодні з кольором ID 5.')
+        context.bot.send_message(chat_id=chat_id, text="No meetings found.")
     else:
-        message = "Зустрічі на сьогодні:\n"
+        message = "Meetings for today:\n"
         for meeting in today_meetings:
-            message += f"{format_meeting(meeting, thailand_tz, ukraine_tz)}\n"
+            message += meeting.format(thailand_tz, ukraine_tz, language) + "\n"
 
         context.bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN) 
