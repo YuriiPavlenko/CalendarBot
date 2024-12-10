@@ -60,6 +60,5 @@ start_conv_handler = ConversationHandler(
     fallbacks=[],
     name="start_conv",
     persistent=False,
-    per_message=True,
     per_chat=True
 )

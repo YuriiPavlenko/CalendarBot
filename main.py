@@ -38,7 +38,6 @@ NOTIF_COMMAND = ConversationHandler(
     fallbacks=[],
     name="notif_command",
     persistent=False,
-    per_message=True,
     per_chat=True
 )
 
