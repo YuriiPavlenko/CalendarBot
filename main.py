@@ -1,11 +1,16 @@
+import os
 import logging
 import logging.config
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler
 from src.handlers import start, settings_filter, filter_chosen, settings_notifications, notifications_chosen, get_today, get_tomorrow, get_rest_week, get_next_week
-from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL, WEBHOOK_PORT
+from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL  # Make sure this URL is set and valid.
+from src.localization import STRINGS
 
 logging.config.fileConfig("src/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
+
+# Use the PORT provided by Railway, or default to 3000 if not set
+PORT = int(os.environ.get("PORT", "443"))
 
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
@@ -35,10 +40,10 @@ application.add_handler(CommandHandler("get_next_week", get_next_week))
 
 if __name__ == "__main__":
     # Run the application using its built-in webhook server.
-    # The application will automatically set the webhook to TELEGRAM_WEBHOOK_URL.
+    # Make sure TELEGRAM_WEBHOOK_URL is something like "https://<your-app>.up.railway.app"
     application.run_webhook(
         listen="0.0.0.0",
-        port=int(WEBHOOK_PORT),
-        url_path="",  # empty because we receive updates at '/'
+        port=PORT,
+        url_path="",  # If you like, you can specify a path, e.g. "/webhook"
         webhook_url=TELEGRAM_WEBHOOK_URL
     )
