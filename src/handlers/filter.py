@@ -6,10 +6,15 @@ from ..localization import STRINGS
 
 logger = logging.getLogger(__name__)
 
-FILTER_ONLY = 10
+FILTER_ONLY = 101  # use a distinct state number not used elsewhere
 
 async def settings_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.debug("Entered /settings_filter handler")
+    # Optional: end other conversations if needed
+    # For example:
+    # context.application.end_conversation("start_conv")  # If you want to forcibly end the start conv
+    # Make sure no other conversation is messing with this one.
+
     keyboard = [
         [InlineKeyboardButton(STRINGS["settings_filter_all"], callback_data="all"),
          InlineKeyboardButton(STRINGS["settings_filter_mine"], callback_data="mine")]
@@ -26,7 +31,7 @@ async def settings_filter_callback(update: Update, context: ContextTypes.DEFAULT
     await query.answer()
     user_id = query.from_user.id
     choice = query.data
-    logger.debug("User %s chose filter: %s in settings_filter", user_id, choice)
+    logger.debug("User %s chose filter: %s in settings_filter", user_id, choice, extra={"user_id": user_id})
     session = SessionLocal()
     set_filter(session, user_id, choice)
     session.close()

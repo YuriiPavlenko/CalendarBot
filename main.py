@@ -21,12 +21,13 @@ logger.info("Bot starting up", extra={"context": "initialization"})
 
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-# Add a direct handler for /start to confirm it is triggered at all:
-application.add_handler(CommandHandler("start", start), group=0)
+# Direct handler for /start to confirm it works
+# application.add_handler(CommandHandler("start", start))
 
-application.add_handler(start_conv_handler, group=1)
-application.add_handler(filter_conv_handler, group=1)
+application.add_handler(start_conv_handler)
+application.add_handler(filter_conv_handler)
 
+# Notifications command conversation if needed, ensure unique states if separate from start
 NOTIF_COMMAND = ConversationHandler(
     entry_points=[CommandHandler("settings_notifications", lambda u,c: ask_notification_1h(u.message, c))],
     states={
@@ -37,11 +38,11 @@ NOTIF_COMMAND = ConversationHandler(
     },
     fallbacks=[],
     name="notif_command",
-    persistent=False,
-    per_chat=True
+    persistent=False
 )
 
-application.add_handler(NOTIF_COMMAND, group=1)
+application.add_handler(NOTIF_COMMAND)
+
 application.add_handler(CommandHandler("get_today", get_today))
 application.add_handler(CommandHandler("get_tomorrow", get_tomorrow))
 application.add_handler(CommandHandler("get_rest_week", get_rest_week))
