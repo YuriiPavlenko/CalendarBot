@@ -1,7 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.dialects.sqlite import TEXT
-
 from src.config import DATABASE_URL
 
 Base = declarative_base()
@@ -9,15 +7,15 @@ Base = declarative_base()
 class UserSettings(Base):
     __tablename__ = "user_settings"
     user_id = Column(Integer, primary_key=True)
-    # filter: "all" or "mine"
     filter_type = Column(String, default="all")
     notify_1h = Column(Boolean, default=False)
     notify_15m = Column(Boolean, default=False)
     notify_5m = Column(Boolean, default=False)
     notify_new = Column(Boolean, default=False)
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(DATABASE_URL)  # No need for SQLite-specific args
 Base.metadata.create_all(bind=engine)
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def get_user_settings(session, user_id):

@@ -10,8 +10,9 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 WEBHOOK_HOST = TELEGRAM_WEBHOOK_URL
 WEBHOOK_PORT = 443
 
-# Use the Railway volume at /app/data
-DATABASE_URL = "sqlite:////app/data/database.db"
+# Use the DATABASE_URL provided by Railway for PostgreSQL
+# Format: postgresql+psycopg2://user:password@host:port/dbname
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg2://user:pass@localhost:5432/mydb")
 
 TIMEZONE_UA = "Europe/Kiev"
 TIMEZONE_TH = "Asia/Bangkok"
