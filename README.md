@@ -1,53 +1,39 @@
-# Telegram Meeting Bot
+# Telegram Meetings Bot
 
-This is a Telegram bot designed to manage meetings using Google Calendar. It allows users to view meetings, create new meetings, and manage notifications for upcoming meetings.
+This Telegram bot interacts with a Google Calendar to show users scheduled meetings, filter them by their attendance, 
+and send notifications before meetings. It also allows users to set their filter and notification preferences.
 
 ## Features
+- Language: Russian
+- Fetches meetings from Google Calendar
+- Filter settings: show all or only user's meetings
+- Notification settings: 
+  - 1 hour before meeting
+  - 15 minutes before meeting
+  - 5 minutes before meeting
+  - On new meeting creation
+- Commands:
+  - /start
+  - /settings_filter
+  - /settings_notifications
+  - /get_today
+  - /get_tomorrow
+  - /get_rest_week
+  - /get_next_week
+- Menu button to show available commands
+- Uses webhook to receive Telegram updates
+- Logging of all requests, responses, and errors
+- User settings stored in a database (SQLite)
 
-- **Language Support**: Users can choose between Russian and Ukrainian.
-- **Meeting Management**: View meetings for today, tomorrow, or the week. Create new meetings with optional details.
-- **User-Specific Meetings**: Filter meetings where the user is a participant.
-- **Notifications**: Subscribe to notifications for meetings at various intervals.
+## Environment Variables
+- GOOGLE_CALENDAR_ID
+- GOOGLE_SERVICE_ACCOUNT_KEY (JSON string of the service account credentials)
+- TELEGRAM_BOT_TOKEN
+- TELEGRAM_CHAT_ID
+- TELEGRAM_WEBHOOK_URL
 
-## Setup
+## Deployment
+This project is ready to be deployed on Railway. Make sure to set the environment variables 
+and point Telegram's webhook to TELEGRAM_WEBHOOK_URL.
 
-### Prerequisites
-
-- Python 3.7+
-- Google Cloud account with a service account for Google Calendar API
-- Telegram Bot Token
-
-### Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yourusername/telegram-meeting-bot.git
-   cd telegram-meeting-bot
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Environment Variables**:
-   Set the following environment variables in your deployment platform (e.g., Railway):
-   - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token.
-   - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your Google service account JSON file.
-
-4. **Run the Bot**:
-   Deploy the bot on your preferred platform (e.g., Railway) and start the bot.
-
-## Usage
-
-- **/start**: Start interacting with the bot and choose your language.
-- **/show_meetings**: View all meetings for today.
-- **/show_user_meetings**: View meetings where you are a participant.
-- **/manage_notifications**: Manage your notification preferences.
-- **/subscribe_notifications**: Subscribe to meeting notifications.
-- **/unsubscribe_notifications**: Unsubscribe from meeting notifications.
-- **/create_meeting**: Create a new meeting.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## Installation

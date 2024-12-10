@@ -2,7 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+.env
+instance/
+*.db
 # C extensions
 *.so
 
@@ -93,3 +95,6 @@ ENV/
 # IDEs
 .idea/
 .vscode/
+
+# Other
+.DS_Store
