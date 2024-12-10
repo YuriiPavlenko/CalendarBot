@@ -1,5 +1,10 @@
 import logging
 import logging.config
+import sys
+
+# Load logging configuration
+logging.config.fileConfig("src/logging.conf", disable_existing_loggers=False)
+
 from telegram.ext import Application, CommandHandler
 from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL, WEBHOOK_PORT
 from src.localization import STRINGS
@@ -11,8 +16,8 @@ from src.handlers.gets import get_today, get_tomorrow, get_rest_week, get_next_w
 
 from telegram.ext import ConversationHandler, CallbackQueryHandler
 
-logging.config.fileConfig("src/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
+logger.info("Bot starting up", extra={"context": "initialization"})
 
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
@@ -33,13 +38,13 @@ NOTIF_COMMAND = ConversationHandler(
 application.add_handler(start_conv_handler)
 application.add_handler(filter_conv_handler)
 application.add_handler(NOTIF_COMMAND)
-
 application.add_handler(CommandHandler("get_today", get_today))
 application.add_handler(CommandHandler("get_tomorrow", get_tomorrow))
 application.add_handler(CommandHandler("get_rest_week", get_rest_week))
 application.add_handler(CommandHandler("get_next_week", get_next_week))
 
 if __name__ == "__main__":
+    logger.debug("Running webhook...", extra={"context": "webhook_setup"})
     application.run_webhook(
         listen="0.0.0.0",
         port=int(WEBHOOK_PORT),

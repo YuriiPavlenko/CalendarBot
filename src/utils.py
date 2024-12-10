@@ -87,7 +87,7 @@ def format_meetings_list(meetings, period="today"):
             # Format: Ссылка: [link](http://...)
             if mt["hangoutLink"]:
                 link = escape_markdown(mt["hangoutLink"])
-                lines.append(STRINGS["link_label"].format(link=f"[ссылка]({link})"))
+                lines.append(STRINGS["link_label"].format(link=f"[{mt["hangoutLink"]}]({mt["hangoutLink"]})"))
 
             if mt["location"]:
                 loc = escape_markdown(mt["location"])
