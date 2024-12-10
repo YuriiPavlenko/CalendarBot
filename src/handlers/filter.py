@@ -22,7 +22,11 @@ async def settings_filter_callback(update: Update, context: ContextTypes.DEFAULT
     choice = query.data
     session = SessionLocal()
     set_filter(session, user_id, choice)
+    # If needed, we could read attributes here, then:
+    # us = get_user_settings(session, user_id)
+    # filter_type = us.filter_type
     session.close()
+
     await query.edit_message_text(text=STRINGS["settings_filter_saved"])
     await query.message.reply_text(STRINGS["filter_saved_standalone"])
     return ConversationHandler.END

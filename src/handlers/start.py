@@ -30,6 +30,9 @@ async def filter_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     choice = query.data  # "all" or "mine"
     session = SessionLocal()
     set_filter(session, user_id, choice)
+    # If we needed to read user settings here, we would:
+    # us = get_user_settings(session, user_id)
+    # filter_type = us.filter_type
     session.close()
     await query.edit_message_text(text=STRINGS["settings_filter_saved"])
 
