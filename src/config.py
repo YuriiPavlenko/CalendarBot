@@ -10,7 +10,8 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 WEBHOOK_HOST = TELEGRAM_WEBHOOK_URL
 WEBHOOK_PORT = 443
 
-DATABASE_URL = "sqlite:///./database.db"
+# Use the Railway volume at /app/data
+DATABASE_URL = "sqlite:////app/data/database.db"
 
 TIMEZONE_UA = "Europe/Kiev"
 TIMEZONE_TH = "Asia/Bangkok"

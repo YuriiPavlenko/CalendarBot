@@ -1,7 +1,7 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, CommandHandler
-from ..database import SessionLocal, set_filter, set_notifications
+from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, CallbackQueryHandler
+from ..database import SessionLocal, set_filter
 from ..localization import STRINGS
 from .notifications import ask_notification_1h, NOTIF_1H, NOTIF_15M, NOTIF_5M, NOTIF_NEW
 
@@ -33,9 +33,7 @@ async def filter_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session.close()
     await query.edit_message_text(text=STRINGS["settings_filter_saved"])
 
-    # Proceed to notifications since we came from start
     context.user_data["from_start"] = True
-    # Move to ask_notification_1h
     return await ask_notification_1h(query.message, context)
 
 start_conv_handler = ConversationHandler(
@@ -49,5 +47,6 @@ start_conv_handler = ConversationHandler(
     },
     fallbacks=[],
     name="start_conv",
-    persistent=False
+    persistent=False,
+    per_message=True
 )

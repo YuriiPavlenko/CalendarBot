@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
-# Separate command for notifications settings
-# Similar to start notifications flow:
 NOTIF_COMMAND = ConversationHandler(
     entry_points=[CommandHandler("settings_notifications", lambda u,c: ask_notification_1h(u.message, c))],
     states={
@@ -28,7 +26,8 @@ NOTIF_COMMAND = ConversationHandler(
     },
     fallbacks=[],
     name="notif_command",
-    persistent=False
+    persistent=False,
+    per_message=True
 )
 
 application.add_handler(start_conv_handler)

@@ -34,5 +34,6 @@ filter_conv_handler = ConversationHandler(
     },
     fallbacks=[],
     name="filter_conv",
-    persistent=False
+    persistent=False,
+    per_message=True
 )
