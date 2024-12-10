@@ -11,21 +11,25 @@ logger = logging.getLogger(__name__)
 FILTER_CHOICE = 1
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Entered /start command handler")
-    user_id = update.effective_user.id
-    logger.info("User %s started bot", user_id)
-    await update.message.reply_text(STRINGS["greeting"])
-    logger.debug("Sent greeting message")
+    try:
+        logger.info("Entered /start command handler", extra={"context": "start_entry"})
+        user_id = update.effective_user.id
+        logger.info("User %s triggered /start", user_id, extra={"user_id": user_id})
+        await update.message.reply_text(STRINGS["greeting"])
+        logger.debug("Sent greeting message")
 
-    keyboard = [
-        [InlineKeyboardButton(STRINGS["settings_filter_all"], callback_data="all"),
-         InlineKeyboardButton(STRINGS["settings_filter_mine"], callback_data="mine")]
-    ]
-    await update.message.reply_text(STRINGS["settings_filter_intro"],
-                                    reply_markup=InlineKeyboardMarkup(keyboard))
-    logger.debug("Sent filter choice inline keyboard")
-    context.user_data["from_start"] = True
-    return FILTER_CHOICE
+        keyboard = [
+            [InlineKeyboardButton(STRINGS["settings_filter_all"], callback_data="all"),
+             InlineKeyboardButton(STRINGS["settings_filter_mine"], callback_data="mine")]
+        ]
+        await update.message.reply_text(STRINGS["settings_filter_intro"],
+                                        reply_markup=InlineKeyboardMarkup(keyboard))
+        logger.debug("Sent filter choice inline keyboard")
+        context.user_data["from_start"] = True
+        return FILTER_CHOICE
+    except Exception as e:
+        logger.exception("Error in start handler", extra={"error": str(e)})
+        return ConversationHandler.END
 
 async def filter_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.debug("Entered filter_callback for /start flow")
@@ -33,7 +37,7 @@ async def filter_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
     choice = query.data
-    logger.debug("User %s chose filter: %s", user_id, choice)
+    logger.debug("User %s chose filter: %s", user_id, choice, extra={"user_id": user_id, "choice": choice})
     session = SessionLocal()
     set_filter(session, user_id, choice)
     session.close()
@@ -56,5 +60,6 @@ start_conv_handler = ConversationHandler(
     fallbacks=[],
     name="start_conv",
     persistent=False,
-    per_message=True
+    per_message=True,
+    per_chat=True
 )

@@ -9,7 +9,7 @@ from telegram.ext import Application, CommandHandler
 from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL, WEBHOOK_PORT
 from src.localization import STRINGS
 
-from src.handlers.start import start_conv_handler
+from src.handlers.start import start, start_conv_handler
 from src.handlers.filter import filter_conv_handler
 from src.handlers.notifications import (ask_notification_1h, notif_1h_callback, notif_15m_callback, notif_5m_callback, notif_new_callback, NOTIF_1H, NOTIF_15M, NOTIF_5M, NOTIF_NEW)
 from src.handlers.gets import get_today, get_tomorrow, get_rest_week, get_next_week
@@ -20,6 +20,12 @@ logger = logging.getLogger(__name__)
 logger.info("Bot starting up", extra={"context": "initialization"})
 
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+
+# Add a direct handler for /start to confirm it is triggered at all:
+application.add_handler(CommandHandler("start", start), group=0)
+
+application.add_handler(start_conv_handler, group=1)
+application.add_handler(filter_conv_handler, group=1)
 
 NOTIF_COMMAND = ConversationHandler(
     entry_points=[CommandHandler("settings_notifications", lambda u,c: ask_notification_1h(u.message, c))],
@@ -32,12 +38,11 @@ NOTIF_COMMAND = ConversationHandler(
     fallbacks=[],
     name="notif_command",
     persistent=False,
-    per_message=True
+    per_message=True,
+    per_chat=True
 )
 
-application.add_handler(start_conv_handler)
-application.add_handler(filter_conv_handler)
-application.add_handler(NOTIF_COMMAND)
+application.add_handler(NOTIF_COMMAND, group=1)
 application.add_handler(CommandHandler("get_today", get_today))
 application.add_handler(CommandHandler("get_tomorrow", get_tomorrow))
 application.add_handler(CommandHandler("get_rest_week", get_rest_week))
