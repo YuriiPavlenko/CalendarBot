@@ -1,7 +1,7 @@
 import datetime
 from dateutil import tz
-from localization import STRINGS
-from config import TIMEZONE_TH, TIMEZONE_UA
+from src.localization import STRINGS
+from src.config import TIMEZONE_TH, TIMEZONE_UA
 
 def filter_meetings(meetings, filter_type, user_nickname):
     if filter_type == "mine":
