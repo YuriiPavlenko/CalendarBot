@@ -2,7 +2,7 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, CommandHandler
 from ..database import SessionLocal, set_filter, set_notifications
-from localization import STRINGS
+from ..localization import STRINGS
 from .notifications import ask_notification_1h, NOTIF_1H, NOTIF_15M, NOTIF_5M, NOTIF_NEW
 
 logger = logging.getLogger(__name__)
