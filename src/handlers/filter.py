@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, CallbackQueryHandler
-from database import SessionLocal, set_filter
-from localization import STRINGS
+from src.database import SessionLocal, set_filter
+from src.localization import STRINGS
 
 FILTER_ONLY = 10
 

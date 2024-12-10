@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
-from database import SessionLocal, set_notifications
-from localization import STRINGS
+from src.database import SessionLocal, set_notifications
+from src.localization import STRINGS
 
 NOTIF_1H = 2
 NOTIF_15M = 3

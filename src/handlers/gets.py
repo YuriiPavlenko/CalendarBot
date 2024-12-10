@@ -1,10 +1,10 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from database import SessionLocal, get_user_settings
-from google_calendar import fetch_meetings
-from localization import STRINGS
-from utils import filter_meetings, format_meetings_list
-from utils import get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
+from src.database import SessionLocal, get_user_settings
+from src.google_calendar import fetch_meetings
+from src.localization import STRINGS
+from src.utils import filter_meetings, format_meetings_list
+from src.utils import get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
 
 async def get_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
