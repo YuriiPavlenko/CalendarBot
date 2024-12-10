@@ -4,9 +4,7 @@ from src.localization import STRINGS
 from src.config import TIMEZONE_TH, TIMEZONE_UA
 
 def filter_meetings(meetings, filter_type, user_nickname):
-    if filter_type == "mine":
-        return [m for m in meetings if user_nickname in m["attendants"]]
-    return meetings
+    return [m for m in meetings if (filter_type != "mine" or user_nickname in m["attendants"])]
 
 def get_today_th():
     th_tz = tz.gettz(TIMEZONE_TH)
@@ -26,7 +24,7 @@ def get_rest_week_th():
     th_tz = tz.gettz(TIMEZONE_TH)
     now_th = datetime.datetime.now(th_tz)
     today = now_th.date()
-    weekday = today.weekday()  # Monday=0
+    weekday = today.weekday()
     days_until_saturday = 5 - weekday
     if days_until_saturday < 0:
         days_until_saturday = 0
@@ -80,12 +78,21 @@ def format_meetings_list(meetings, period="today"):
             lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
             lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
 
+            # Show attendants if any
+            if mt["attendants"]:
+                attendants_escaped = ", ".join([escape_markdown(a) for a in mt["attendants"]])
+                lines.append("Участники: " + attendants_escaped)
+
+            # Make link clickable:
+            # Format: Ссылка: [link](http://...)
+            if mt["hangoutLink"]:
+                link = escape_markdown(mt["hangoutLink"])
+                lines.append(STRINGS["link_label"].format(link=f"[ссылка]({link})"))
+
             if mt["location"]:
                 loc = escape_markdown(mt["location"])
                 lines.append(STRINGS["location_label"].format(location=loc))
-            if mt["hangoutLink"]:
-                link = escape_markdown(mt["hangoutLink"])
-                lines.append(STRINGS["link_label"].format(link=link))
+
             if mt["description"]:
                 desc = escape_markdown(mt["description"])
                 lines.append(STRINGS["description_label"].format(description=desc))
@@ -98,7 +105,6 @@ def format_meetings_list(meetings, period="today"):
         lines.pop()
 
     return "\n".join(lines)
-
 
 def escape_markdown(text: str) -> str:
     specials = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
