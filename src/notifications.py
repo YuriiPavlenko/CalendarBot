@@ -45,14 +45,18 @@ def get_subscribed_users_for_new(meeting):
     filtered = []
     for uid in user_ids:
         us = get_user_settings(session, uid)
-        if us.notify_new:
-            if us.filter_type == "mine":
+        # Extract attributes
+        notify_new = us.notify_new
+        filter_type = us.filter_type
+        if notify_new:
+            if filter_type == "mine":
                 if any(a == f"@{uid}" for a in meeting["attendants"]):
                     filtered.append(uid)
             else:
                 filtered.append(uid)
     session.close()
     return filtered
+
 
 def get_subscribed_users_for_before(meeting, delta_minutes):
     from sqlalchemy import text
@@ -62,16 +66,21 @@ def get_subscribed_users_for_before(meeting, delta_minutes):
     filtered = []
     for uid in user_ids:
         us = get_user_settings(session, uid)
+        notify_1h = us.notify_1h
+        notify_15m = us.notify_15m
+        notify_5m = us.notify_5m
+        filter_type = us.filter_type
+
         notify_attr = False
-        if delta_minutes == 60 and us.notify_1h:
+        if delta_minutes == 60 and notify_1h:
             notify_attr = True
-        elif delta_minutes == 15 and us.notify_15m:
+        elif delta_minutes == 15 and notify_15m:
             notify_attr = True
-        elif delta_minutes == 5 and us.notify_5m:
+        elif delta_minutes == 5 and notify_5m:
             notify_attr = True
         
         if notify_attr:
-            if us.filter_type == "mine":
+            if filter_type == "mine":
                 if any(a == f"@{uid}" for a in meeting["attendants"]):
                     filtered.append(uid)
             else:
