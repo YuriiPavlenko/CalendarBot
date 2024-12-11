@@ -13,7 +13,18 @@ from .handlers.gets import (get_today_handler, get_tomorrow_handler, get_rest_we
 from .scheduler import scheduler  # We'll explicitly start it below
 
 async def error_handler(update, context):
-    logger.exception("Unhandled exception", extra={"update": str(update), "error": str(context.error)})
+    # Manually extract exception info and pass it to logger
+    exc_type = type(context.error)
+    exc_value = context.error
+    exc_tb = context.error.__traceback__
+
+    # Log with full stack trace and extra context
+    logger.error(
+        "Unhandled exception",
+        exc_info=(exc_type, exc_value, exc_tb),
+        extra={"update": str(update), "error": str(context.error)}
+    )
+
 
 def main():
     # Initialize Telegram application
