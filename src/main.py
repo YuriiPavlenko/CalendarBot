@@ -12,7 +12,7 @@ from .config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL, WEBHOOK_PORT
 from .handlers.start import start_handler
 from .handlers.gets import (get_today_handler, get_tomorrow_handler, get_rest_week_handler, get_next_week_handler)
 from .scheduler import scheduler, refresh_meetings
-from .notifications import * # We'll set application here
+import src.notifications # We'll set application here
 
 async def error_handler(update, context):
     logger.error("Unhandled exception occurred", exc_info=True)
@@ -27,7 +27,7 @@ async def main():
     application.add_handler(get_next_week_handler)
 
     # Provide application to notifications so it can send messages
-    notifications.application = application
+    src.notifications.application = application
 
     # Refresh meetings once at startup so cache is initialized
     await refresh_meetings()
