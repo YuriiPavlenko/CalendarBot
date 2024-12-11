@@ -3,9 +3,10 @@ from dateutil import tz
 from .config import TIMEZONE_TH
 from .localization import STRINGS
 
-def filter_meetings(meetings, filter_type, user_nickname):
+def filter_meetings(meetings, filter_type, user_identifier):
+    # user_identifier = "@username" if user has username, else "@{user_id}"
     if filter_type == "mine":
-        return [m for m in meetings if user_nickname in m["attendants"]]
+        return [m for m in meetings if user_identifier in m["attendants"]]
     return meetings
 
 def get_today_th():

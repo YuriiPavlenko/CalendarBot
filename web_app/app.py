@@ -3,16 +3,17 @@ from flask import Flask, request, render_template, redirect
 from src.database import SessionLocal, get_user_settings, set_filter, set_notifications
 from src.cache import cache
 from src.utils import filter_meetings, get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
-from sqlalchemy import text
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
 def get_filtered_meetings(user_id, period):
     session = SessionLocal()
     us = get_user_settings(session, user_id)
+    filter_type = us.filter_type
+    user_identifier = us.username if us.username else f"@{user_id}"
     session.close()
-    meetings = cache.get_meetings()
 
+    meetings = cache.get_meetings()
     if period == "today":
         start, end = get_today_th()
     elif period == "tomorrow":
@@ -25,7 +26,7 @@ def get_filtered_meetings(user_id, period):
         return []
 
     filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(filtered_range, us.filter_type, f"@{user_id}")
+    filtered = filter_meetings(filtered_range, filter_type, user_identifier)
     return filtered
 
 @app.route("/")
@@ -78,5 +79,3 @@ def save_settings():
     session.close()
 
     return redirect(f"/?user_id={user_id}")
-
-# No app.run() here because we use gunicorn in production.

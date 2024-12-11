@@ -12,8 +12,8 @@ class UserSettings(Base):
     notify_15m = Column(Boolean, default=False)
     notify_5m = Column(Boolean, default=False)
     notify_new = Column(Boolean, default=False)
-    username = Column(String, nullable=True)  # store @nickname
-    fullname = Column(String, nullable=True)  # store user’s full name
+    username = Column(String, nullable=True)
+    fullname = Column(String, nullable=True)
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)

@@ -11,7 +11,7 @@ from ..config import TIMEZONE_TH
 logger = logging.getLogger(__name__)
 
 def format_meetings_list(meetings, period="today"):
-    # Same code as before, no changes, just ensure we’re not referencing DB objects here.
+    # unchanged
     th_tz = tz.gettz(TIMEZONE_TH)
     meetings = sorted(meetings, key=lambda m: m["start_th"])
     by_day = {}
@@ -62,62 +62,40 @@ def format_meetings_list(meetings, period="today"):
         return STRINGS["no_meetings"]
     return "\n".join(lines)
 
-async def get_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT_TYPE, period):
     user_id = update.effective_user.id
     session = SessionLocal()
     us = get_user_settings(session, user_id)
-    # Extract needed attributes before closing the session
     filter_type = us.filter_type
+    user_identifier = us.username if us.username else f"@{user_id}"
     session.close()
 
     meetings = cache.get_meetings()
-    start, end = get_today_th()
-    todays = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(todays, filter_type, f"@{user_id}")
-    text = format_meetings_list(filtered, "today")
+    if period == "today":
+        start, end = get_today_th()
+    elif period == "tomorrow":
+        start, end = get_tomorrow_th()
+    elif period == "rest_week":
+        start, end = get_rest_week_th()
+    elif period == "next_week":
+        start, end = get_next_week_th()
+
+    filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
+    filtered = filter_meetings(filtered_range, filter_type, user_identifier)
+    text = format_meetings_list(filtered, "today" if period in ["today","tomorrow"] else "week")
     await update.message.reply_text(text)
+
+async def get_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await _get_meetings_for_period(update, context, "today")
 
 async def get_tomorrow(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    session = SessionLocal()
-    us = get_user_settings(session, user_id)
-    filter_type = us.filter_type
-    session.close()
-
-    meetings = cache.get_meetings()
-    start, end = get_tomorrow_th()
-    tomorrows = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(tomorrows, filter_type, f"@{user_id}")
-    text = format_meetings_list(filtered, "tomorrow")
-    await update.message.reply_text(text)
+    await _get_meetings_for_period(update, context, "tomorrow")
 
 async def get_rest_week(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    session = SessionLocal()
-    us = get_user_settings(session, user_id)
-    filter_type = us.filter_type
-    session.close()
-
-    meetings = cache.get_meetings()
-    start, end = get_rest_week_th()
-    filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(filtered_range, filter_type, f"@{user_id}")
-    text = format_meetings_list(filtered, "week")
-    await update.message.reply_text(text)
+    await _get_meetings_for_period(update, context, "rest_week")
 
 async def get_next_week(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    session = SessionLocal()
-    us = get_user_settings(session, user_id)
-    filter_type = us.filter_type
-    session.close()
-
-    meetings = cache.get_meetings()
-    start, end = get_next_week_th()
-    filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(filtered_range, filter_type, f"@{user_id}")
-    text = format_meetings_list(filtered, "week")
-    await update.message.reply_text(text)
+    await _get_meetings_for_period(update, context, "next_week")
 
 get_today_handler = CommandHandler("get_today", get_today)
 get_tomorrow_handler = CommandHandler("get_tomorrow", get_tomorrow)
