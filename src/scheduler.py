@@ -1,11 +1,11 @@
 import logging
 import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-from google_calendar import fetch_meetings_from_gcal
-from utils import get_today_th
-from cache import cache
-from notifications import get_subscribed_users_for_new, notify_users_new_meeting
-from config import TIMEZONE_TH
+from .google_calendar import fetch_meetings_from_gcal
+from .utils import get_today_th
+from .cache import cache
+from .notifications import get_subscribed_users_for_new, notify_users_new_meeting
+from .config import TIMEZONE_TH
 from dateutil import tz
 
 logger = logging.getLogger(__name__)

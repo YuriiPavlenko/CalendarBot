@@ -2,8 +2,8 @@ import json
 from dateutil import parser, tz
 from googleapiclient.discovery import build
 from google.oauth2.service_account import Credentials
-from config import GOOGLE_SERVICE_ACCOUNT_KEY, GOOGLE_CALENDAR_ID
-from config import TIMEZONE_UA, TIMEZONE_TH
+from .config import GOOGLE_SERVICE_ACCOUNT_KEY, GOOGLE_CALENDAR_ID
+from .config import TIMEZONE_UA, TIMEZONE_TH
 
 def get_calendar_service():
     creds = Credentials.from_service_account_info(json.loads(GOOGLE_SERVICE_ACCOUNT_KEY))

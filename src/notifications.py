@@ -1,8 +1,8 @@
 import logging
-from database import SessionLocal, get_user_settings
-from localization import STRINGS
+from .database import SessionLocal, get_user_settings
+from .localization import STRINGS
 from telegram import Bot
-from config import TELEGRAM_BOT_TOKEN
+from .config import TELEGRAM_BOT_TOKEN
 
 logger = logging.getLogger(__name__)
 bot = Bot(token=TELEGRAM_BOT_TOKEN)

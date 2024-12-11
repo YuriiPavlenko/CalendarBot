@@ -2,8 +2,8 @@ import logging
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes, CommandHandler
 
-from localization import STRINGS
-from config import WEB_APP_URL
+from ..localization import STRINGS
+from ..config import WEB_APP_URL
 
 logger = logging.getLogger(__name__)
 
