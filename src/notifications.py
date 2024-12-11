@@ -1,5 +1,5 @@
 import logging
-from database import SessionLocal, get_user_settings
+from .database import SessionLocal, get_user_settings
 from .localization import STRINGS
 from telegram import Bot
 from .config import TELEGRAM_BOT_TOKEN, TIMEZONE_TH
