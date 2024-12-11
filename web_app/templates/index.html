@@ -28,37 +28,36 @@
   <h1 class="my-4 text-center">Настройки и встречи</h1>
   <p>Пользователь ID: {{user_id}}</p>
 
-  <!-- Settings Form -->
   <div class="card mb-4">
     <div class="card-body">
       <h2 class="h4 mb-3">Настройки</h2>
       <form action="/save?user_id={{user_id}}" method="post">
         <h3 class="h5 mb-2">Фильтр встреч</h3>
         <div class="form-check mb-2">
-          <input class="form-check-input" type="radio" name="filter_type" id="filter_all" value="all" {% if filter_type=='all' %}checked{% endif %}>
-          <label class="form-check-label" for="filter_all">Показывать все встречи</label>
+          <input class="form-check-input" type="radio" name="filter_type" value="all" {% if filter_type=='all' %}checked{% endif %}>
+          <label class="form-check-label">Показывать все встречи</label>
         </div>
         <div class="form-check mb-3">
-          <input class="form-check-input" type="radio" name="filter_type" id="filter_mine" value="mine" {% if filter_type=='mine' %}checked{% endif %}>
-          <label class="form-check-label" for="filter_mine">Показывать только мои встречи</label>
+          <input class="form-check-input" type="radio" name="filter_type" value="mine" {% if filter_type=='mine' %}checked{% endif %}>
+          <label class="form-check-label">Показывать только мои встречи</label>
         </div>
 
         <h3 class="h5 mb-2">Уведомления</h3>
         <div class="form-check mb-1">
-          <input class="form-check-input" type="checkbox" name="notify_1h" id="notify_1h" {% if notify_1h %}checked{% endif %}>
-          <label class="form-check-label" for="notify_1h">За 1 час</label>
+          <input class="form-check-input" type="checkbox" name="notify_1h" {% if notify_1h %}checked{% endif %}>
+          <label class="form-check-label">За 1 час</label>
         </div>
         <div class="form-check mb-1">
-          <input class="form-check-input" type="checkbox" name="notify_15m" id="notify_15m" {% if notify_15m %}checked{% endif %}>
-          <label class="form-check-label" for="notify_15m">За 15 минут</label>
+          <input class="form-check-input" type="checkbox" name="notify_15m" {% if notify_15m %}checked{% endif %}>
+          <label class="form-check-label">За 15 минут</label>
         </div>
         <div class="form-check mb-1">
-          <input class="form-check-input" type="checkbox" name="notify_5m" id="notify_5m" {% if notify_5m %}checked{% endif %}>
-          <label class="form-check-label" for="notify_5m">За 5 минут</label>
+          <input class="form-check-input" type="checkbox" name="notify_5m" {% if notify_5m %}checked{% endif %}>
+          <label class="form-check-label">За 5 минут</label>
         </div>
         <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" name="notify_new" id="notify_new" {% if notify_new %}checked{% endif %}>
-          <label class="form-check-label" for="notify_new">При добавлении новой встречи</label>
+          <input class="form-check-input" type="checkbox" name="notify_new" {% if notify_new %}checked{% endif %}>
+          <label class="form-check-label">При добавлении новой встречи</label>
         </div>
 
         <button type="submit" class="btn btn-primary">Сохранить</button>
@@ -66,7 +65,6 @@
     </div>
   </div>
 
-  <!-- Meetings Display -->
   <div class="row">
     <div class="col-md-6">
       <h2 class="h4">Сегодня</h2>
