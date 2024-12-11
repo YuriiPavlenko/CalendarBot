@@ -1,15 +1,22 @@
 import logging
-from .database import SessionLocal, get_user_settings
+from database import SessionLocal, get_user_settings
 from .localization import STRINGS
 from telegram import Bot
-from .config import TELEGRAM_BOT_TOKEN
-from sqlalchemy import text
+from .config import TELEGRAM_BOT_TOKEN, TIMEZONE_TH
+from .utils import filter_meetings
+import datetime
+from dateutil import tz
 
 logger = logging.getLogger(__name__)
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
 def notify_users_new_meeting(meeting, user_list):
     text = STRINGS["notify_new_meeting"].format(details=formatted_meeting(meeting))
+    for user_id in user_list:
+        bot.send_message(chat_id=user_id, text=text)
+
+def notify_users_before_meeting(meeting, user_list):
+    text = STRINGS["notify_before_meeting"].format(details=formatted_meeting(meeting))
     for user_id in user_list:
         bot.send_message(chat_id=user_id, text=text)
 
@@ -31,6 +38,7 @@ def formatted_meeting(m):
     )
 
 def get_subscribed_users_for_new(meeting):
+    from sqlalchemy import text
     session = SessionLocal()
     users = session.execute(text("SELECT user_id FROM user_settings")).fetchall()
     user_ids = [u[0] for u in users]
@@ -45,3 +53,40 @@ def get_subscribed_users_for_new(meeting):
                 filtered.append(uid)
     session.close()
     return filtered
+
+def get_subscribed_users_for_before(meeting, delta_minutes):
+    from sqlalchemy import text
+    session = SessionLocal()
+    users = session.execute(text("SELECT user_id FROM user_settings")).fetchall()
+    user_ids = [u[0] for u in users]
+    filtered = []
+    for uid in user_ids:
+        us = get_user_settings(session, uid)
+        notify_attr = False
+        if delta_minutes == 60 and us.notify_1h:
+            notify_attr = True
+        elif delta_minutes == 15 and us.notify_15m:
+            notify_attr = True
+        elif delta_minutes == 5 and us.notify_5m:
+            notify_attr = True
+        
+        if notify_attr:
+            if us.filter_type == "mine":
+                if any(a == f"@{uid}" for a in meeting["attendants"]):
+                    filtered.append(uid)
+            else:
+                filtered.append(uid)
+    session.close()
+    return filtered
+
+def check_and_send_before_notifications(meetings):
+    # Called every minute. If a meeting starts in exactly 60 min, 15 min or 5 min, send notification.
+    now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
+    for m in meetings:
+        start = m["start_th"]
+        diff = (start - now).total_seconds() / 60.0
+        diff_rounded = round(diff)
+        # If diff_rounded == 60 or == 15 or == 5 send notifications
+        if diff_rounded in [60,15,5]:
+            user_list = get_subscribed_users_for_before(m, diff_rounded)
+            notify_users_before_meeting(m, user_list)

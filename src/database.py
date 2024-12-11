@@ -12,6 +12,8 @@ class UserSettings(Base):
     notify_15m = Column(Boolean, default=False)
     notify_5m = Column(Boolean, default=False)
     notify_new = Column(Boolean, default=False)
+    username = Column(String, nullable=True)  # store @nickname
+    fullname = Column(String, nullable=True)  # store user’s full name
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)
@@ -36,4 +38,10 @@ def set_notifications(session, user_id, n1h, n15m, n5m, nnew):
     us.notify_15m = n15m
     us.notify_5m = n5m
     us.notify_new = nnew
+    session.commit()
+
+def set_user_info(session, user_id, username, fullname):
+    us = get_user_settings(session, user_id)
+    us.username = username
+    us.fullname = fullname
     session.commit()

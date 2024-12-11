@@ -1,4 +1,4 @@
-python-telegram-bot[webhooks]==20.5
+python-telegram-bot==20.5
 google-api-python-client==2.92.0
 google-auth==2.23.2
 Flask==2.2.5
@@ -9,4 +9,4 @@ SQLAlchemy==2.0.20
 alembic==1.12.0
 psycopg2-binary==2.9.7
 python-json-logger==2.0.4
-gunicorn
+gunicorn==20.1.0
