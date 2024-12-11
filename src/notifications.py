@@ -121,13 +121,13 @@ async def send_new_updated_notifications(new_meetings, updated_meetings):
 async def refresh_meetings(initial_run=False):
     # from today to end of next week
     now_th = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
-    from utils import get_next_week_th
+    from .utils import get_next_week_th
     nw_start, nw_end = get_next_week_th()
     start = now_th
     end = nw_end
 
-    from google_calendar import fetch_meetings_from_gcal
-    from cache import cache
+    from .google_calendar import fetch_meetings_from_gcal
+    from .cache import cache
     new_meetings = fetch_meetings_from_gcal(start, end)
     new_map = {m["id"]: m for m in new_meetings}
     new_meetings_list, updated_meetings = handle_new_and_updated_meetings_sync(new_map)
@@ -139,7 +139,7 @@ async def refresh_meetings(initial_run=False):
 
 async def notification_job(_context):
     # Check meetings starting soon
-    from cache import cache
+    from .cache import cache
     meetings = cache.get_meetings()
     now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
     for m in meetings:
