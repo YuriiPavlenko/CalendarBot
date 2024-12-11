@@ -20,7 +20,9 @@ def index():
     nnew = us.notify_new
     session.close()
 
+    # Get meetings from cache
     meetings = cache.get_meetings()
+    # Filter them according to user settings
     filtered = filter_meetings(meetings, filter_type, f"@{user_id}")
 
     # Group by date
@@ -39,7 +41,6 @@ def index():
                            notify_new=nnew,
                            meetings=by_day)
 
-
 @app.route("/save", methods=["POST"])
 def save():
     user_id = request.args.get("user_id", type=int)
@@ -57,7 +58,3 @@ def save():
     session.close()
 
     return redirect(f"/?user_id={user_id}")
-
-if __name__ == "__main__":
-    # Run flask on a port behind a reverse proxy or your chosen host setup
-    app.run(host="0.0.0.0", port=8080)
