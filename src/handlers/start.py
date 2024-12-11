@@ -6,8 +6,8 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler
 )
-from database import SessionLocal, set_filter, set_notifications
-from localization import STRINGS
+from ..database import SessionLocal, set_filter, set_notifications
+from ..localization import STRINGS
 
 logger = logging.getLogger(__name__)
 
