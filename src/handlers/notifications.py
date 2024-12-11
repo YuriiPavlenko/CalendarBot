@@ -1,18 +1,19 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 from ..database import SessionLocal, set_notifications
 from ..localization import STRINGS
 
 logger = logging.getLogger(__name__)
 
-NOTIF_1H = 2
-NOTIF_15M = 3
-NOTIF_5M = 4
-NOTIF_NEW = 5
+# States for the standalone /settings_notifications command
+NOTIF_CMD_1H = 201
+NOTIF_CMD_15M = 202
+NOTIF_CMD_5M = 203
+NOTIF_CMD_NEW = 204
 
-async def ask_notification_1h(message, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Asking user about 1h notifications")
+async def ask_notification_1h_cmd(message, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug("Asking user about 1h notifications (cmd)")
     keyboard = [
         [InlineKeyboardButton(STRINGS["yes_button"], callback_data="yes"),
          InlineKeyboardButton(STRINGS["no_button"], callback_data="no")]
@@ -21,49 +22,49 @@ async def ask_notification_1h(message, context: ContextTypes.DEFAULT_TYPE):
         STRINGS["settings_notifications_intro"] + "\n" + STRINGS["settings_notifications_1h"],
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-    return NOTIF_1H
+    return NOTIF_CMD_1H
 
-async def notif_1h_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Entered notif_1h_callback")
+async def notif_1h_cmd_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug("notif_1h_cmd_callback triggered")
     query = update.callback_query
     await query.answer()
     context.user_data["notify_1h"] = (query.data == "yes")
+
     keyboard = [
         [InlineKeyboardButton(STRINGS["yes_button"], callback_data="yes"),
          InlineKeyboardButton(STRINGS["no_button"], callback_data="no")]
     ]
     await query.edit_message_text(text=STRINGS["settings_notifications_15m"], reply_markup=InlineKeyboardMarkup(keyboard))
-    logger.debug("User 1h choice saved")
-    return NOTIF_15M
+    return NOTIF_CMD_15M
 
-async def notif_15m_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Entered notif_15m_callback")
+async def notif_15m_cmd_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug("notif_15m_cmd_callback triggered")
     query = update.callback_query
     await query.answer()
     context.user_data["notify_15m"] = (query.data == "yes")
+
     keyboard = [
         [InlineKeyboardButton(STRINGS["yes_button"], callback_data="yes"),
          InlineKeyboardButton(STRINGS["no_button"], callback_data="no")]
     ]
     await query.edit_message_text(text=STRINGS["settings_notifications_5m"], reply_markup=InlineKeyboardMarkup(keyboard))
-    logger.debug("User 15m choice saved")
-    return NOTIF_5M
+    return NOTIF_CMD_5M
 
-async def notif_5m_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Entered notif_5m_callback")
+async def notif_5m_cmd_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug("notif_5m_cmd_callback triggered")
     query = update.callback_query
     await query.answer()
     context.user_data["notify_5m"] = (query.data == "yes")
+
     keyboard = [
         [InlineKeyboardButton(STRINGS["yes_button"], callback_data="yes"),
          InlineKeyboardButton(STRINGS["no_button"], callback_data="no")]
     ]
     await query.edit_message_text(text=STRINGS["settings_notifications_new"], reply_markup=InlineKeyboardMarkup(keyboard))
-    logger.debug("User 5m choice saved")
-    return NOTIF_NEW
+    return NOTIF_CMD_NEW
 
-async def notif_new_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.debug("Entered notif_new_callback")
+async def notif_new_cmd_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.debug("notif_new_cmd_callback triggered")
     query = update.callback_query
     await query.answer()
     context.user_data["notify_new"] = (query.data == "yes")
@@ -78,22 +79,9 @@ async def notif_new_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
     session.close()
 
     await query.edit_message_text(text=STRINGS["settings_notifications_saved"])
-    logger.debug("All notifications saved")
+    logger.debug("All notifications saved for /settings_notifications command")
 
-    if context.user_data.get("from_start", False):
-        menu_text = "\n".join([
-            STRINGS["menu_title"],
-            STRINGS["menu_start"],
-            STRINGS["menu_settings_filter"],
-            STRINGS["menu_settings_notifications"],
-            STRINGS["menu_get_today"],
-            STRINGS["menu_get_tomorrow"],
-            STRINGS["menu_get_rest_week"],
-            STRINGS["menu_get_next_week"]
-        ])
-        await query.message.reply_text(menu_text)
-        await query.message.reply_text(STRINGS["settings_done"])
-        context.user_data["from_start"] = False
-        logger.debug("Sent menu and settings done message")
+    # After done, we can show a confirmation message (optional)
+    await query.message.reply_text(STRINGS["settings_done"])
 
-    return ContextTypes.DEFAULT_TYPE.END
+    return ConversationHandler.END
