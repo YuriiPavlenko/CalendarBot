@@ -3,6 +3,7 @@ from .database import SessionLocal, get_user_settings
 from .localization import STRINGS
 from telegram import Bot
 from .config import TELEGRAM_BOT_TOKEN
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -31,7 +32,7 @@ def formatted_meeting(m):
 
 def get_subscribed_users_for_new(meeting):
     session = SessionLocal()
-    users = session.execute("SELECT user_id FROM user_settings").fetchall()
+    users = session.execute(text("SELECT user_id FROM user_settings")).fetchall()
     user_ids = [u[0] for u in users]
     filtered = []
     for uid in user_ids:
