@@ -1,16 +1,16 @@
 import json
-import datetime
 from dateutil import parser, tz
 from googleapiclient.discovery import build
 from google.oauth2.service_account import Credentials
-from src.config import GOOGLE_SERVICE_ACCOUNT_KEY, GOOGLE_CALENDAR_ID
+from config import GOOGLE_SERVICE_ACCOUNT_KEY, GOOGLE_CALENDAR_ID
+from config import TIMEZONE_UA, TIMEZONE_TH
 
 def get_calendar_service():
     creds = Credentials.from_service_account_info(json.loads(GOOGLE_SERVICE_ACCOUNT_KEY))
-    service = build('calendar', 'v3', credentials=creds)
+    service = build('calendar', 'v3', credentials=creds, cache_discovery=False)
     return service
 
-def fetch_meetings(start_dt, end_dt):
+def fetch_meetings_from_gcal(start_dt, end_dt):
     service = get_calendar_service()
     events_result = service.events().list(
         calendarId=GOOGLE_CALENDAR_ID,
@@ -26,25 +26,11 @@ def fetch_meetings(start_dt, end_dt):
     return meetings
 
 def transform_event_to_meeting(event):
-    # Meeting structure:
-    #   0. internal ID
-    #   1. Title
-    #   2. Start datetime in Ukraine
-    #   3. Start datetime in Thailand
-    #   4. End datetime in Ukraine
-    #   5. End datetime in Thailand
-    #   6. Attendants (list)
-    #   7. Location
-    #   8. Google meets link
-    #   9. Description
-
-    title = event.get('summary', '')
-    description = event.get('description', '')
     start = parser.isoparse(event['start'].get('dateTime', event['start'].get('date')))
     end = parser.isoparse(event['end'].get('dateTime', event['end'].get('date')))
-    # convert times to UA and TH
-    ua_tz = tz.gettz("Europe/Kiev")
-    th_tz = tz.gettz("Asia/Bangkok")
+
+    ua_tz = tz.gettz(TIMEZONE_UA)
+    th_tz = tz.gettz(TIMEZONE_TH)
     start_ua = start.astimezone(ua_tz)
     start_th = start.astimezone(th_tz)
     end_ua = end.astimezone(ua_tz)
@@ -54,27 +40,23 @@ def transform_event_to_meeting(event):
     attendants_list = []
     for a in attendees:
         email = a.get('email','')
-        # If it's in format "1@nickname"
-        # We just extract @nickname
-        if "@" in email:
-            # The first char may be '1', second should be nickname start
-            # According to the requirement, format is "1@nickname"
-            # so we return "@nickname"
-            nickname_part = email.split('@',1)[1]
-            attendants_list.append("@" + nickname_part)
-
-    location = event.get('location', '')
-    hangoutLink = event.get('hangoutLink', '')
+        if '@' in email:
+            # "1@nickname"
+            parts = email.split('@',1)
+            if len(parts) == 2:
+                nick = parts[1]
+                attendants_list.append("@"+nick)
 
     return {
         "id": event.get('id',''),
-        "title": title,
+        "title": event.get('summary',''),
         "start_ua": start_ua,
         "start_th": start_th,
         "end_ua": end_ua,
         "end_th": end_th,
         "attendants": attendants_list,
-        "location": location,
-        "hangoutLink": hangoutLink,
-        "description": description
+        "location": event.get('location',''),
+        "hangoutLink": event.get('hangoutLink',''),
+        "description": event.get('description',''),
+        "updated": event.get('updated','')
     }

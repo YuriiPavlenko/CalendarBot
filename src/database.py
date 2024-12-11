@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base
-from src.config import DATABASE_URL
+from config import DATABASE_URL
 
 Base = declarative_base()
 
@@ -13,9 +13,8 @@ class UserSettings(Base):
     notify_5m = Column(Boolean, default=False)
     notify_new = Column(Boolean, default=False)
 
-engine = create_engine(DATABASE_URL)  # No need for SQLite-specific args
+engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)
-
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def get_user_settings(session, user_id):
@@ -31,10 +30,10 @@ def set_filter(session, user_id, filter_type):
     us.filter_type = filter_type
     session.commit()
 
-def set_notifications(session, user_id, notify_1h, notify_15m, notify_5m, notify_new):
+def set_notifications(session, user_id, n1h, n15m, n5m, nnew):
     us = get_user_settings(session, user_id)
-    us.notify_1h = notify_1h
-    us.notify_15m = notify_15m
-    us.notify_5m = notify_5m
-    us.notify_new = notify_new
+    us.notify_1h = n1h
+    us.notify_15m = n15m
+    us.notify_5m = n5m
+    us.notify_new = nnew
     session.commit()
