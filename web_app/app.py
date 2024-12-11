@@ -1,8 +1,8 @@
 import os
 from flask import Flask, request, render_template, redirect
-from database import SessionLocal, get_user_settings, set_filter, set_notifications
-from cache import cache
-from utils import filter_meetings, get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
+from src.database import SessionLocal, get_user_settings, set_filter, set_notifications
+from src.cache import cache
+from src.utils import filter_meetings, get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 

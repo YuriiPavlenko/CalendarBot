@@ -1,6 +1,7 @@
 import logging
 from .database import SessionLocal, get_user_settings
 from .localization import STRINGS
+from .utils import filter_meetings
 import datetime
 from .config import TIMEZONE_TH
 from dateutil import tz
@@ -8,14 +9,18 @@ from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
-application = None  # set from main.py
+application = None
 initialized = False
 previous_map = {}
 
+def initialize_notifications_variables(app):
+    global application
+    application = app
+
 def formatted_meeting(m):
-    desc = m["description"] if m["description"] else ""
-    loc = m["location"] if m["location"] else ""
-    link = m["hangoutLink"] if m["hangoutLink"] else ""
+    desc = m["description"] or ""
+    loc = m["location"] or ""
+    link = m["hangoutLink"] or ""
     attendants_str = ", ".join(m["attendants"]) if m["attendants"] else ""
     return STRINGS["meeting_details"].format(
         title=m["title"],
@@ -36,11 +41,9 @@ def get_subscribed_users_for_new(meeting):
     filtered = []
     for uid in user_ids:
         us = get_user_settings(session, uid)
-        filter_type = us.filter_type
-        notify_new = us.notify_new
         user_identifier = us.username if us.username else f"@{uid}"
-        if notify_new:
-            if filter_type == "mine":
+        if us.notify_new:
+            if us.filter_type == "mine":
                 if user_identifier in meeting["attendants"]:
                     filtered.append(uid)
             else:
@@ -55,9 +58,7 @@ def get_subscribed_users_for_before(meeting, delta_minutes):
     filtered = []
     for uid in user_ids:
         us = get_user_settings(session, uid)
-        filter_type = us.filter_type
         user_identifier = us.username if us.username else f"@{uid}"
-
         notify_1h = us.notify_1h
         notify_15m = us.notify_15m
         notify_5m = us.notify_5m
@@ -71,7 +72,7 @@ def get_subscribed_users_for_before(meeting, delta_minutes):
             notify_attr = True
 
         if notify_attr:
-            if filter_type == "mine":
+            if us.filter_type == "mine":
                 if user_identifier in meeting["attendants"]:
                     filtered.append(uid)
             else:
@@ -88,19 +89,6 @@ async def async_notify_before_meeting(meeting, user_list):
     text = STRINGS["notify_before_meeting"].format(details=formatted_meeting(meeting))
     for user_id in user_list:
         await application.bot.send_message(chat_id=user_id, text=text)
-
-def check_and_send_before_notifications(meetings):
-    # Called from scheduler sync job
-    now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
-    for m in meetings:
-        start = m["start_th"]
-        diff = (start - now).total_seconds() / 60.0
-        diff_rounded = round(diff)
-        if diff_rounded in [60,15,5]:
-            user_list = get_subscribed_users_for_before(m, diff_rounded)
-            if user_list:
-                # Schedule async notifications
-                application.create_task(async_notify_before_meeting(m, user_list))
 
 def handle_new_and_updated_meetings_sync(new_map):
     global initialized, previous_map
@@ -120,15 +108,45 @@ def handle_new_and_updated_meetings_sync(new_map):
     previous_map = new_map
     return new_meetings, updated_meetings
 
-def handle_new_and_updated_meetings(new_map):
-    # Called from scheduler sync job after fetch
-    new_meetings, updated_meetings = handle_new_and_updated_meetings_sync(new_map)
-    # Notify async
+async def send_new_updated_notifications(new_meetings, updated_meetings):
     for nm in new_meetings:
         subs = get_subscribed_users_for_new(nm)
         if subs:
-            application.create_task(async_notify_new_meeting(nm, subs))
+            await async_notify_new_meeting(nm, subs)
     for um in updated_meetings:
         subs = get_subscribed_users_for_new(um)
         if subs:
-            application.create_task(async_notify_new_meeting(um, subs))
+            await async_notify_new_meeting(um, subs)
+
+async def refresh_meetings(initial_run=False):
+    # from today to end of next week
+    now_th = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
+    from utils import get_next_week_th
+    nw_start, nw_end = get_next_week_th()
+    start = now_th
+    end = nw_end
+
+    from google_calendar import fetch_meetings_from_gcal
+    from cache import cache
+    new_meetings = fetch_meetings_from_gcal(start, end)
+    new_map = {m["id"]: m for m in new_meetings}
+    new_meetings_list, updated_meetings = handle_new_and_updated_meetings_sync(new_map)
+    cache.update_meetings(new_meetings)
+
+    if not initial_run:
+        # send notifications for new/updated
+        await send_new_updated_notifications(new_meetings_list, updated_meetings)
+
+async def notification_job(_context):
+    # Check meetings starting soon
+    from cache import cache
+    meetings = cache.get_meetings()
+    now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
+    for m in meetings:
+        start = m["start_th"]
+        diff = (start - now).total_seconds() / 60.0
+        diff_rounded = round(diff)
+        if diff_rounded in [60,15,5]:
+            user_list = get_subscribed_users_for_before(m, diff_rounded)
+            if user_list:
+                await async_notify_before_meeting(m, user_list)
