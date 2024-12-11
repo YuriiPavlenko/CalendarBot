@@ -11,9 +11,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("User %s issued /start", update.effective_user.id)
     user_id = update.effective_user.id
     webapp_url = f"{WEB_APP_URL}?user_id={user_id}"
-    keyboard = [[KeyboardButton("Открыть настройки", web_app=WebAppInfo(url=webapp_url))]]
-    await update.message.reply_text(STRINGS["greeting"])
-   #     reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    keyboard = [[KeyboardButton(text="Открыть настройки", web_app=WebAppInfo(url=webapp_url))]]
+    await update.message.reply_text(text=STRINGS["greeting"], reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
     
 
 start_handler = CommandHandler("start", start)
