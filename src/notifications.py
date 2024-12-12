@@ -20,17 +20,33 @@ def safe_get_meeting_data(meeting, field, default=None):
         return getattr(meeting, field, default)
     return meeting.get(field, default)
 
-def normalize_datetime(dt):
-    """Normalize datetime by removing timezone info."""
+def normalize_datetime(dt, timezone=None):
+    """Normalize datetime by converting to specified timezone."""
     if dt is None:
         return None
-    if hasattr(dt, 'replace'):
-        return dt.replace(tzinfo=None)
+    if not isinstance(dt, datetime.datetime):
+        return dt
+        
+    # If datetime has no timezone, assume it's in the specified timezone
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=tz.gettz(timezone))
     return dt
 
-def compare_datetimes(dt1, dt2):
-    """Compare two datetimes after normalization."""
-    return normalize_datetime(dt1) == normalize_datetime(dt2)
+def compare_datetimes(dt1, dt2, timezone='UTC'):
+    """Compare two datetimes after normalizing to the same timezone."""
+    norm1 = normalize_datetime(dt1, timezone)
+    norm2 = normalize_datetime(dt2, timezone)
+    
+    if norm1 is None or norm2 is None:
+        return norm1 == norm2
+        
+    # Convert both to UTC for comparison
+    if norm1.tzinfo:
+        norm1 = norm1.astimezone(tz.UTC)
+    if norm2.tzinfo:
+        norm2 = norm2.astimezone(tz.UTC)
+        
+    return norm1 == norm2
 
 async def send_notification(user_id, meeting, is_new=False):
     if not user_id or not meeting:
@@ -116,16 +132,16 @@ async def refresh_meetings(context=None):
                 if title_old != title_new:
                     logger.debug(f"Title changed: '{title_old}' -> '{title_new}'")
 
-                if not compare_datetimes(existing_meeting.start_ua, m.get("start_ua")):
+                if not compare_datetimes(existing_meeting.start_ua, m.get("start_ua"), 'Europe/Kiev'):
                     logger.debug(f"Start UA changed: {existing_meeting.start_ua} -> {m.get('start_ua')}")
 
-                if not compare_datetimes(existing_meeting.end_ua, m.get("end_ua")):
+                if not compare_datetimes(existing_meeting.end_ua, m.get("end_ua"), 'Europe/Kiev'):
                     logger.debug(f"End UA changed: {existing_meeting.end_ua} -> {m.get('end_ua')}")
 
-                if not compare_datetimes(existing_meeting.start_th, m.get("start_th")):
+                if not compare_datetimes(existing_meeting.start_th, m.get("start_th"), TIMEZONE_TH):
                     logger.debug(f"Start TH changed: {existing_meeting.start_th} -> {m.get('start_th')}")
 
-                if not compare_datetimes(existing_meeting.end_th, m.get("end_th")):
+                if not compare_datetimes(existing_meeting.end_th, m.get("end_th"), TIMEZONE_TH):
                     logger.debug(f"End TH changed: {existing_meeting.end_th} -> {m.get('end_th')}")
 
                 attendants_old = existing_meeting.attendants or ""
