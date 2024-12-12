@@ -1,8 +1,5 @@
 import logging
 import logging.config
-import sys
-import os
-import asyncio
 
 logging.config.fileConfig("src/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
@@ -19,12 +16,10 @@ async def error_handler(update, context):
     logger.error("Unhandled exception occurred", exc_info=True)
 
 async def startup(application):
-    # Initialize cache once without notifications
+    # Initialize meetings without using the cache
     await refresh_meetings(initial_run=True)
     # Schedule recurring jobs
-    # Every 5 minutes refresh meetings
     application.job_queue.run_repeating(refresh_meetings, interval=300, first=300)
-    # Every 1 minute check upcoming notifications
     application.job_queue.run_repeating(notification_job, interval=60, first=60)
 
 if __name__ == "__main__":
@@ -35,16 +30,6 @@ if __name__ == "__main__":
     application.add_handler(get_tomorrow_handler)
     application.add_handler(get_rest_week_handler)
     application.add_handler(get_next_week_handler)
-
-    async def set_commands():
-        await application.bot.set_my_commands([
-            BotCommand("start", STRINGS["menu_start"]),
-            BotCommand("get_today", STRINGS["menu_get_today"]),
-            BotCommand("get_tomorrow", STRINGS["menu_get_tomorrow"]),
-            BotCommand("get_rest_week", STRINGS["menu_get_rest_week"]),
-            BotCommand("get_next_week", STRINGS["menu_get_next_week"]),
-        ])
-        return 0
 
     # Initialize notification logic
     initialize_notifications_variables(application)

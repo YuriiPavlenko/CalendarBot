@@ -28,6 +28,13 @@
   <h1 class="my-4 text-center">Настройки и встречи</h1>
   <p>Пользователь ID: {{user_id}}</p>
 
+  {% if settings_saved %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      Настройки сохранены успешно.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endif %}
+
   <div class="card mb-4">
     <div class="card-body">
       <h2 class="h4 mb-3">Настройки</h2>
@@ -60,10 +67,35 @@
           <label class="form-check-label">При добавлении новой встречи</label>
         </div>
 
-        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Сохранить</button>
       </form>
     </div>
   </div>
+
+  <h2 class="h4 mb-3">Встречи</h2>
+  {% if meetings and meetings|length > 0 %}
+    {% for m in meetings %}
+    <div class="meeting-card">
+      <strong>{{m.title}}</strong><br>
+      Украина: {{m.start_ua.strftime("%Y-%m-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%m-%d %H:%M")}}<br>
+      Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%m-%d %H:%M")}}<br>
+      {% if m.attendants %}
+        Участники: {{m.attendants.split(', ')|join(', ')}}<br>
+      {% endif %}
+      {% if m.hangoutLink %}
+        Ссылка: <a href="{{m.hangoutLink}}" target="_blank">Открыть</a><br>
+      {% endif %}
+      {% if m.location %}
+        Место: {{m.location}}<br>
+      {% endif %}
+      {% if m.description %}
+        Описание: {{m.description}}<br>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <p>Нет предстоящих встреч.</p>
+  {% endif %}
 
   <div class="row">
     <div class="col-md-6">
@@ -73,7 +105,7 @@
         <div class="meeting-card">
           <strong>{{m.title}}</strong><br>
           Украина: {{m.start_ua.strftime("%Y-%m-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%m-%d %H:%M")}}<br>
-          Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%m-%d %H:%M")}}<br>
+          Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%м-%d %H:%M")}}<br>
           {% if m.attendants %}
             Участники: {{m.attendants|join(', ')}}<br>
           {% endif %}
@@ -98,8 +130,8 @@
         {% for m in tomorrow_meetings %}
         <div class="meeting-card">
           <strong>{{m.title}}</strong><br>
-          Украина: {{m.start_ua.strftime("%Y-%m-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%m-%d %H:%M")}}<br>
-          Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%m-%d %H:%M")}}<br>
+          Украина: {{m.start_ua.strftime("%Y-%м-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%м-%d %H:%M")}}<br>
+          Таиланд: {{m.start_th.strftime("%Y-%м-%d %H:%M")}} - {{m.end_th.strftime("%Y-%м-%d %H:%M")}}<br>
           {% if m.attendants %}
             Участники: {{m.attendants|join(', ')}}<br>
           {% endif %}
@@ -127,8 +159,8 @@
         {% for m in rest_week_meetings %}
         <div class="meeting-card">
           <strong>{{m.title}}</strong><br>
-          Украина: {{m.start_ua.strftime("%Y-%m-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%m-%d %H:%M")}}<br>
-          Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%m-%d %H:%M")}}<br>
+          Украина: {{m.start_ua.strftime("%Y-%м-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%м-%d %H:%M")}}<br>
+          Таиланд: {{m.start_th.strftime("%Y-%м-%d %H:%M")}} - {{m.end_th.strftime("%Y-%м-%d %H:%M")}}<br>
           {% if m.attendants %}
             Участники: {{m.attendants|join(', ')}}<br>
           {% endif %}
@@ -153,8 +185,8 @@
         {% for m in next_week_meetings %}
         <div class="meeting-card">
           <strong>{{m.title}}</strong><br>
-          Украина: {{m.start_ua.strftime("%Y-%m-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%m-%d %H:%M")}}<br>
-          Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%m-%d %H:%M")}}<br>
+          Украина: {{m.start_ua.strftime("%Y-%м-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%м-%d %H:%M")}}<br>
+          Таиланд: {{m.start_th.strftime("%Y-%м-%d %H:%M")}} - {{m.end_th.strftime("%Y-%м-%d %H:%M")}}<br>
           {% if m.attendants %}
             Участники: {{m.attendants|join(', ')}}<br>
           {% endif %}

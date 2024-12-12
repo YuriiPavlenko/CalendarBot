@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from .config import DATABASE_URL
 
@@ -7,13 +7,27 @@ Base = declarative_base()
 class UserSettings(Base):
     __tablename__ = "user_settings"
     user_id = Column(Integer, primary_key=True)
-    filter_type = Column(String, default="all")
+    filter_by_attendant = Column(Boolean, default=False)
     notify_1h = Column(Boolean, default=False)
     notify_15m = Column(Boolean, default=False)
     notify_5m = Column(Boolean, default=False)
     notify_new = Column(Boolean, default=False)
     username = Column(String, nullable=True)
     fullname = Column(String, nullable=True)
+
+class Meeting(Base):
+    __tablename__ = "meetings"
+    id = Column(String, primary_key=True)
+    title = Column(String)
+    start_ua = Column(DateTime)
+    end_ua = Column(DateTime)
+    start_th = Column(DateTime)
+    end_th = Column(DateTime)
+    attendants = Column(Text)
+    hangoutLink = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    updated = Column(DateTime)
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)
@@ -29,7 +43,7 @@ def get_user_settings(session, user_id):
 
 def set_filter(session, user_id, filter_type):
     us = get_user_settings(session, user_id)
-    us.filter_type = filter_type
+    us.filter_by_attendant = filter_type
     session.commit()
 
 def set_notifications(session, user_id, n1h, n15m, n5m, nnew):

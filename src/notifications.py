@@ -1,16 +1,12 @@
-import logging
 import datetime
 from dateutil import tz
-from sqlalchemy import text
 
-from .config import TIMEZONE_TH
-from .database import SessionLocal, get_user_settings
-from .localization import STRINGS
-from .utils import filter_meetings, get_next_week_th
-from .google_calendar import fetch_meetings_from_gcal
-from .cache import cache
-
-logger = logging.getLogger(__name__)
+from config import TIMEZONE_TH
+from database import SessionLocal, Meeting, UserSettings
+from localization import STRINGS
+from utils import get_next_week_th
+from google_calendar import fetch_meetings_from_gcal
+from formatters import formatted_meeting
 
 application = None
 initialized = False
@@ -20,72 +16,38 @@ def initialize_notifications_variables(app):
     global application
     application = app
 
-def formatted_meeting(meeting):
-    lines = []
-    title = meeting["title"]
-    start_ua = meeting["start_ua"].strftime("%H:%M")
-    end_ua = meeting["end_ua"].strftime("%H:%M")
-    start_th = meeting["start_th"].strftime("%H:%M")
-    end_th = meeting["end_th"].strftime("%H:%M")
-
-    lines.append(title)
-    lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
-    lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
-
-    if meeting["attendants"]:
-        lines.append("Участники: " + ", ".join(meeting["attendants"]))
-    if meeting["hangoutLink"]:
-        lines.append(STRINGS["link_label"].format(link=meeting["hangoutLink"]))
-    if meeting["location"]:
-        lines.append(STRINGS["location_label"].format(location=meeting["location"]))
-    if meeting["description"]:
-        lines.append(STRINGS["description_label"].format(description=meeting["description"]))
-
-    return "\n".join(lines)
+# Removed formatted_meeting function
 
 def get_subscribed_users_for_new(meeting):
     session = SessionLocal()
-    users = session.execute(text("SELECT user_id FROM user_settings")).fetchall()
-    user_ids = [u[0] for u in users]
+    users = session.query(UserSettings).all()
     filtered = []
-    for uid in user_ids:
-        us = get_user_settings(session, uid)
-        user_identifier = us.username if us.username else f"@{uid}"
+    for us in users:
         if us.notify_new:
-            if us.filter_type == "mine":
-                if user_identifier in meeting["attendants"]:
-                    filtered.append(uid)
+            if us.filter_type:
+                if us.username and us.username in meeting["attendants"]:
+                    filtered.append(us.user_id)
             else:
-                filtered.append(uid)
+                filtered.append(us.user_id)
     session.close()
     return filtered
 
 def get_subscribed_users_for_before(meeting, delta_minutes):
     session = SessionLocal()
-    users = session.execute(text("SELECT user_id FROM user_settings")).fetchall()
-    user_ids = [u[0] for u in users]
+    users = session.query(UserSettings).all()
     filtered = []
-    for uid in user_ids:
-        us = get_user_settings(session, uid)
-        user_identifier = us.username if us.username else f"@{uid}"
-        notify_1h = us.notify_1h
-        notify_15m = us.notify_15m
-        notify_5m = us.notify_5m
-
-        notify_attr = False
-        if delta_minutes == 60 and notify_1h:
-            notify_attr = True
-        elif delta_minutes == 15 and notify_15m:
-            notify_attr = True
-        elif delta_minutes == 5 and notify_5m:
-            notify_attr = True
-
+    for us in users:
+        notify_attr = (
+            (delta_minutes == 60 and us.notify_1h) or
+            (delta_minutes == 15 and us.notify_15m) or
+            (delta_minutes == 5 and us.notify_5m)
+        )
         if notify_attr:
-            if us.filter_type == "mine":
-                if user_identifier in meeting["attendants"]:
-                    filtered.append(uid)
+            if us.filter_type:
+                if us.username and us.username in meeting["attendants"]:
+                    filtered.append(us.user_id)
             else:
-                filtered.append(uid)
+                filtered.append(us.user_id)
     session.close()
     return filtered
 
@@ -99,33 +61,11 @@ async def async_notify_before_meeting(meeting, user_list):
     for user_id in user_list:
         await application.bot.send_message(chat_id=user_id, text=text)
 
-def handle_new_and_updated_meetings_sync(new_map):
-    global initialized, previous_map
-    if not initialized:
-        previous_map = new_map
-        initialized = True
-        return [], []
-
-    new_meetings = []
-    updated_meetings = []
-    for mid, m in new_map.items():
-        if mid not in previous_map:
-            new_meetings.append(m)
-        else:
-            if m["updated"] != previous_map[mid]["updated"]:
-                updated_meetings.append(m)
-    previous_map = new_map
-    return new_meetings, updated_meetings
-
 async def send_new_updated_notifications(new_meetings, updated_meetings):
-    for nm in new_meetings:
-        subs = get_subscribed_users_for_new(nm)
+    for meeting in new_meetings + updated_meetings:
+        subs = get_subscribed_users_for_new(meeting)
         if subs:
-            await async_notify_new_meeting(nm, subs)
-    for um in updated_meetings:
-        subs = get_subscribed_users_for_new(um)
-        if subs:
-            await async_notify_new_meeting(um, subs)
+            await async_notify_new_meeting(meeting, subs)
 
 async def refresh_meetings(initial_run=False):
     """
@@ -138,24 +78,69 @@ async def refresh_meetings(initial_run=False):
 
     new_meetings = fetch_meetings_from_gcal(start, end)
     new_map = {m["id"]: m for m in new_meetings}
-    new_meetings_list, updated_meetings = handle_new_and_updated_meetings_sync(new_map)
-    cache.update_meetings(new_meetings)
 
+    session = SessionLocal()
+    prev_meetings = session.query(Meeting).all()
+    prev_map = {m.id: m.updated for m in prev_meetings}
+
+    new_meetings_list = []
+    updated_meetings = []
+    for mid, m in new_map.items():
+        if mid not in prev_map:
+            new_meetings_list.append(m)
+        elif m["updated"] != prev_map[mid]:
+            updated_meetings.append(m)
+
+    # Delete old meetings
+    session.query(Meeting).delete()
+    # Add new meetings
+    for m in new_meetings:
+        meeting = Meeting(
+            id=m["id"],
+            title=m["title"],
+            start_ua=m["start_ua"],
+            end_ua=m["end_ua"],
+            start_th=m["start_th"],
+            end_th=m["end_th"],
+            attendants=",".join(m["attendants"]),
+            hangoutLink=m.get("hangoutLink"),
+            location=m.get("location"),
+            description=m.get("description"),
+            updated=m["updated"],
+        )
+        session.add(meeting)
+    session.commit()
     if not initial_run:
-        # send notifications for new/updated
         await send_new_updated_notifications(new_meetings_list, updated_meetings)
+    session.close()
 
 async def notification_job(_context):
     """
     Check meetings starting soon and send notifications.
     """
-    meetings = cache.get_meetings()
     now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
+    session = SessionLocal()
+    meetings = session.query(Meeting).all()
+    session.close()
+
     for m in meetings:
-        start = m["start_th"]
+        start = m.start_th
         diff = (start - now).total_seconds() / 60.0
         diff_rounded = round(diff)
         if diff_rounded in [60, 15, 5]:
-            user_list = get_subscribed_users_for_before(m, diff_rounded)
+            meeting = {
+                "id": m.id,
+                "title": m.title,
+                "start_ua": m.start_ua,
+                "end_ua": m.end_ua,
+                "start_th": m.start_th,
+                "end_th": m.end_th,
+                "attendants": m.attendants.split(",") if m.attendants else [],
+                "hangoutLink": m.hangoutLink,
+                "location": m.location,
+                "description": m.description,
+                "updated": m.updated,
+            }
+            user_list = get_subscribed_users_for_before(meeting, diff_rounded)
             if user_list:
-                await async_notify_before_meeting(m, user_list)
+                await async_notify_before_meeting(meeting, user_list)

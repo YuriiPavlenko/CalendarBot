@@ -1,11 +1,8 @@
-import logging
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes, CommandHandler
 from ..database import SessionLocal, set_user_info
 from ..localization import STRINGS
 from ..config import WEB_APP_URL
-
-logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id

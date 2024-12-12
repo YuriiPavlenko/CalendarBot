@@ -1,77 +1,20 @@
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from ..database import SessionLocal, get_user_settings
+from ..database import SessionLocal, get_user_settings, Meeting
 from ..utils import filter_meetings, get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
-from ..cache import cache
 from ..localization import STRINGS
-from dateutil import tz
-from ..config import TIMEZONE_TH
+from ..formatters import format_meetings_list
 
 logger = logging.getLogger(__name__)
-
-def format_meetings_list(meetings, period="today"):
-    # unchanged
-    th_tz = tz.gettz(TIMEZONE_TH)
-    meetings = sorted(meetings, key=lambda m: m["start_th"])
-    by_day = {}
-    weekdays_ru = STRINGS["weekdays"]
-    for m in meetings:
-        day = m["start_th"].date()
-        if day not in by_day:
-            by_day[day] = []
-        by_day[day].append(m)
-
-    lines = []
-    for day, day_meetings in by_day.items():
-        date_str = day.strftime("%d.%m.%Y")
-        if period == "today":
-            header = STRINGS["meetings_for_today"].format(date=date_str)
-        elif period == "tomorrow":
-            header = STRINGS["meetings_for_tomorrow"].format(date=date_str)
-        else:
-            weekday_name = weekdays_ru[day.weekday()].upper()
-            header = STRINGS["meetings_for_day_of_week"].format(weekday=weekday_name, date=date_str)
-
-        lines.append(header)
-        lines.append("")
-        for mt in day_meetings:
-            title = mt["title"]
-            start_ua = mt["start_ua"].strftime("%H:%M")
-            end_ua = mt["end_ua"].strftime("%H:%M")
-            start_th = mt["start_th"].strftime("%H:%M")
-            end_th = mt["end_th"].strftime("%H:%M")
-            lines.append(f"{title}")
-            lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
-            lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
-            if mt["attendants"]:
-                lines.append("Участники: " + ", ".join(mt["attendants"]))
-            if mt["hangoutLink"]:
-                lines.append(STRINGS["link_label"].format(link=mt["hangoutLink"]))
-            if mt["location"]:
-                lines.append(STRINGS["location_label"].format(location=mt["location"]))
-            if mt["description"]:
-                lines.append(STRINGS["description_label"].format(description=mt["description"]))
-            lines.append("")
-        if lines[-1] == "":
-            lines.pop()
-        lines.append("")
-    if lines and lines[-1] == "":
-        lines.pop()
-
-    if not lines:
-        return STRINGS["no_meetings"]
-    return "\n".join(lines)
 
 async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT_TYPE, period):
     user_id = update.effective_user.id
     session = SessionLocal()
     us = get_user_settings(session, user_id)
-    filter_type = us.filter_type
+    filter_type = us.filter_by_attendant
     user_identifier = us.username if us.username else f"@{user_id}"
-    session.close()
 
-    meetings = cache.get_meetings()
     if period == "today":
         start, end = get_today_th()
     elif period == "tomorrow":
@@ -81,8 +24,27 @@ async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT
     elif period == "next_week":
         start, end = get_next_week_th()
 
-    filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(filtered_range, filter_type, user_identifier)
+    meetings = session.query(Meeting).filter(Meeting.start_th >= start, Meeting.start_th < end).all()
+    session.close()
+
+    meetings_list = []
+    for m in meetings:
+        meeting = {
+            "id": m.id,
+            "title": m.title,
+            "start_ua": m.start_ua,
+            "end_ua": m.end_ua,
+            "start_th": m.start_th,
+            "end_th": m.end_th,
+            "attendants": m.attendants.split(",") if m.attendants else [],
+            "hangoutLink": m.hangoutLink,
+            "location": m.location,
+            "description": m.description,
+            "updated": m.updated,
+        }
+        meetings_list.append(meeting)
+
+    filtered = filter_meetings(meetings_list, filter_type, user_identifier)
     text = format_meetings_list(filtered, period)
     await update.message.reply_text(text)
 

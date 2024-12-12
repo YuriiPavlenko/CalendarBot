@@ -1,43 +1,34 @@
-import os
-from flask import Flask, request, render_template, redirect
-from src.database import SessionLocal, get_user_settings, set_filter, set_notifications
-from src.cache import cache
-from src.utils import filter_meetings, get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
+from flask import Flask, request, render_template, redirect, url_for
+from database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
+from utils import get_end_of_next_week
+from datetime import datetime
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-def get_filtered_meetings(user_id, period):
+def get_meetings(user_id):
     session = SessionLocal()
     us = get_user_settings(session, user_id)
-    filter_type = us.filter_type
+    filter_type = us.filter_by_attendant
     user_identifier = us.username if us.username else f"@{user_id}"
+    now = datetime.now()
+    end_next_week = get_end_of_next_week()
+    meetings_query = session.query(Meeting).filter(Meeting.start_th >= now, Meeting.start_th <= end_next_week)
+    if filter_type == "mine":
+        meetings_query = meetings_query.filter(Meeting.attendants.contains(user_identifier))
+    meetings = meetings_query.all()
     session.close()
-
-    meetings = cache.get_meetings()
-    if period == "today":
-        start, end = get_today_th()
-    elif period == "tomorrow":
-        start, end = get_tomorrow_th()
-    elif period == "rest_week":
-        start, end = get_rest_week_th()
-    elif period == "next_week":
-        start, end = get_next_week_th()
-    else:
-        return []
-
-    filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
-    filtered = filter_meetings(filtered_range, filter_type, user_identifier)
-    return filtered
+    return meetings
 
 @app.route("/")
 def index():
     user_id = request.args.get("user_id", type=int)
+    settings_saved = request.args.get("saved", default=False, type=bool)
     if not user_id:
         return "Missing user_id", 400
 
     session = SessionLocal()
     us = get_user_settings(session, user_id)
-    filter_type = us.filter_type
+    filter_type = us.filter_by_attendant
     n1h = us.notify_1h
     n15m = us.notify_15m
     n5m = us.notify_5m
@@ -48,6 +39,7 @@ def index():
     tomorrow_meetings = get_filtered_meetings(user_id, "tomorrow")
     rest_week_meetings = get_filtered_meetings(user_id, "rest_week")
     next_week_meetings = get_filtered_meetings(user_id, "next_week")
+    meetings = get_meetings(user_id)
 
     return render_template("index.html",
                            user_id=user_id,
@@ -59,7 +51,9 @@ def index():
                            today_meetings=today_meetings,
                            tomorrow_meetings=tomorrow_meetings,
                            rest_week_meetings=rest_week_meetings,
-                           next_week_meetings=next_week_meetings)
+                           next_week_meetings=next_week_meetings,
+                           meetings=meetings,
+                           settings_saved=settings_saved)
 
 @app.route("/save", methods=["POST"])
 def save_settings():
@@ -78,4 +72,4 @@ def save_settings():
     set_notifications(session, user_id, notify_1h, notify_15m, notify_5m, notify_new)
     session.close()
 
-    return redirect(f"/?user_id={user_id}")
+    return redirect(url_for('index', user_id=user_id, saved=True))
