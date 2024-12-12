@@ -61,11 +61,7 @@ async def send_notification(user_id, meeting, is_new=False):
         logger.error(f"Failed to send notification to user {user_id}: {str(e)}")
 
 async def refresh_meetings(context=None):
-    """Refresh meetings from Google Calendar.
-    
-    Args:
-        context: telegram.ext.CallbackContext, optional - Required for job queue compatibility
-    """
+    """Refresh meetings from Google Calendar."""
     logger.info("Starting meetings refresh")
     
     now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
@@ -85,12 +81,12 @@ async def refresh_meetings(context=None):
 
     session = SessionLocal()
     try:
+        # Get subscribers but don't return if empty
         subscribers = session.query(UserSettings).filter(UserSettings.notify_new == True).all()
-        if not subscribers:
+        if subscribers:
+            logger.debug(f"Found {len(subscribers)} subscribers for new meeting notifications")
+        else:
             logger.info("No subscribers found for notifications")
-            return
-            
-        logger.debug(f"Found {len(subscribers)} subscribers for new meeting notifications")
         
         existing_meetings = {m.id: m for m in session.query(Meeting).all() if m and m.id}
         logger.debug(f"Found {len(existing_meetings)} existing meetings in database")
@@ -108,15 +104,16 @@ async def refresh_meetings(context=None):
             if not existing_meeting:
                 new_count += 1
                 logger.debug(f"New meeting found: {m.get('title', 'Untitled')} ({m.get('id')})")
-                # Notify about truly new meetings
-                for user in subscribers:
-                    if user and user.user_id and (
-                        not user.filter_by_attendant or 
-                        (user.username and user.username in (m.get("attendants", []) or []))
-                    ):
-                        logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
-                        await send_notification(user.user_id, m, is_new=True)
-            else:
+                # Only notify if there are subscribers
+                if subscribers:
+                    for user in subscribers:
+                        if user and user.user_id and (
+                            not user.filter_by_attendant or 
+                            (user.username and user.username in (m.get("attendants", []) or []))
+                        ):
+                            logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
+                            await send_notification(user.user_id, m, is_new=True)
+
                 # Compare each field and log differences
                 title_old = existing_meeting.title or ""
                 title_new = m.get("title") or ""
@@ -165,7 +162,7 @@ async def refresh_meetings(context=None):
                             logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
                             await send_notification(user.user_id, m, is_new=True)
         
-        # Only after comparison, update the database
+        # Update database regardless of subscribers
         session.query(Meeting).delete()
         logger.debug("Cleared existing meetings from database")
         
