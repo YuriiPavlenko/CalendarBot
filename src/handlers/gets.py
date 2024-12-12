@@ -19,7 +19,7 @@ async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT
             start_th, end_th = get_today_th()
         elif period == "tomorrow":
             start_th, end_th = get_tomorrow_th()
-        elif period == "rest":
+        elif period == "rest_week":
             start_th, end_th = get_rest_week_th()
         else:  # next week
             start_th, end_th = get_next_week_th()
