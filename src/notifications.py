@@ -21,32 +21,33 @@ def safe_get_meeting_data(meeting, field, default=None):
     return meeting.get(field, default)
 
 def normalize_datetime(dt, timezone=None):
-    """Normalize datetime by converting to specified timezone."""
+    """Normalize datetime by converting to specified timezone and removing tzinfo."""
     if dt is None:
         return None
     if not isinstance(dt, datetime.datetime):
         return dt
         
-    # If datetime has no timezone, assume it's in the specified timezone
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=tz.gettz(timezone))
-    return dt
+    # If datetime has timezone info, convert to target timezone
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(tz.gettz(timezone))
+    # Remove timezone info for database storage
+    return dt.replace(tzinfo=None)
 
 def compare_datetimes(dt1, dt2, timezone='UTC'):
     """Compare two datetimes after normalizing to the same timezone."""
-    norm1 = normalize_datetime(dt1, timezone)
-    norm2 = normalize_datetime(dt2, timezone)
+    if dt1 is None or dt2 is None:
+        return dt1 == dt2
+        
+    # Get timezone objects
+    tz1 = dt1.tzinfo or tz.gettz(timezone)
+    tz2 = dt2.tzinfo or tz.gettz(timezone)
     
-    if norm1 is None or norm2 is None:
-        return norm1 == norm2
-        
+    # Make both timezone-aware if they aren't already
+    dt1 = dt1 if dt1.tzinfo else dt1.replace(tzinfo=tz1)
+    dt2 = dt2 if dt2.tzinfo else dt2.replace(tzinfo=tz2)
+    
     # Convert both to UTC for comparison
-    if norm1.tzinfo:
-        norm1 = norm1.astimezone(tz.UTC)
-    if norm2.tzinfo:
-        norm2 = norm2.astimezone(tz.UTC)
-        
-    return norm1 == norm2
+    return dt1.astimezone(tz.UTC) == dt2.astimezone(tz.UTC)
 
 async def send_notification(user_id, meeting, is_new=False):
     if not user_id or not meeting:
@@ -185,10 +186,11 @@ async def refresh_meetings(context=None):
             meeting = Meeting(
                 id=m.get("id"),
                 title=m.get("title", "Untitled"),
-                start_ua=m.get("start_ua"),
-                end_ua=m.get("end_ua"),
-                start_th=m.get("start_th"),
-                end_th=m.get("end_th"),
+                # Normalize datetimes before storing in database
+                start_ua=normalize_datetime(m.get("start_ua"), 'Europe/Kiev'),
+                end_ua=normalize_datetime(m.get("end_ua"), 'Europe/Kiev'),
+                start_th=normalize_datetime(m.get("start_th"), TIMEZONE_TH),
+                end_th=normalize_datetime(m.get("end_th"), TIMEZONE_TH),
                 attendants=",".join(m.get("attendants", []) or []),
                 hangoutLink=m.get("hangoutLink", ""),
                 location=m.get("location", ""),
