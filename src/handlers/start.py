@@ -16,9 +16,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     set_user_info(session, user_id, username, fullname)
     session.close()
 
-    text = STRINGS["greeting"].replace("!", "\\!")
+    text = '\n'.join([STRINGS["greeting"], STRINGS["menu_title"], STRINGS["menu_start"],STRINGS["menu_get_today"],STRINGS["menu_get_tomorrow"],STRINGS["menu_get_rest_week"],STRINGS["menu_get_next_week"]])
     webapp_url = f"{WEB_APP_URL}?user_id={user_id}"
-    keyboard = [[KeyboardButton("Открыть настройки", web_app=WebAppInfo(url=webapp_url))]]
+    keyboard = [[KeyboardButton("Открыть мини-приложение", web_app=WebAppInfo(url=webapp_url))]]
     await update.message.reply_text(text=text, reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
 
 start_handler = CommandHandler("start", start)

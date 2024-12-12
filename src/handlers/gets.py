@@ -34,6 +34,7 @@ def format_meetings_list(meetings, period="today"):
             header = STRINGS["meetings_for_day_of_week"].format(weekday=weekday_name, date=date_str)
 
         lines.append(header)
+        lines.append("")
         for mt in day_meetings:
             title = mt["title"]
             start_ua = mt["start_ua"].strftime("%H:%M")
@@ -41,8 +42,8 @@ def format_meetings_list(meetings, period="today"):
             start_th = mt["start_th"].strftime("%H:%M")
             end_th = mt["end_th"].strftime("%H:%M")
             lines.append(f"{title}")
-            lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
             lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
+            lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
             if mt["attendants"]:
                 lines.append("Участники: " + ", ".join(mt["attendants"]))
             if mt["hangoutLink"]:

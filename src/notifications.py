@@ -17,22 +17,43 @@ def initialize_notifications_variables(app):
     global application
     application = app
 
-def formatted_meeting(m):
-    desc = m["description"] or ""
-    loc = m["location"] or ""
-    link = m["hangoutLink"] or ""
-    attendants_str = ", ".join(m["attendants"]) if m["attendants"] else ""
-    return STRINGS["meeting_details"].format(
-        title=m["title"],
-        start_ua=m["start_ua"].strftime("%Y-%m-%d %H:%M"),
-        start_th=m["start_th"].strftime("%Y-%m-%d %H:%M"),
-        end_ua=m["end_ua"].strftime("%Y-%m-%d %H:%M"),
-        end_th=m["end_th"].strftime("%Y-%m-%d %H:%M"),
-        attendants=attendants_str,
-        location=loc,
-        link=link,
-        desc=desc
-    )
+def formatted_meeting(meeting):
+    # desc = m["description"] or ""
+    # loc = m["location"] or ""
+    # link = m["hangoutLink"] or ""
+    # attendants_str = ", ".join(m["attendants"]) if m["attendants"] else ""
+    # return STRINGS["meeting_details"].format(
+    #     title=m["title"],
+    #     start_ua=m["start_ua"].strftime("%Y-%m-%d %H:%M"),
+    #     start_th=m["start_th"].strftime("%Y-%m-%d %H:%M"),
+    #     end_ua=m["end_ua"].strftime("%Y-%m-%d %H:%M"),
+    #     end_th=m["end_th"].strftime("%Y-%m-%d %H:%M"),
+    #     attendants=attendants_str,
+    #     location=loc,
+    #     link=link,
+    #     desc=desc
+    # )
+    lines = []
+    title = meeting["title"]
+    start_ua = meeting["start_ua"].strftime("%H:%M")
+    end_ua = meeting["end_ua"].strftime("%H:%M")
+    start_th = meeting["start_th"].strftime("%H:%M")
+    end_th = meeting["end_th"].strftime("%H:%M")
+    
+    lines.append(title)
+    lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
+    lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
+    
+    if meeting["attendants"]:
+        lines.append("Участники: " + ", ".join(meeting["attendants"]))
+    if meeting["hangoutLink"]:
+        lines.append(STRINGS["link_label"].format(link=meeting["hangoutLink"]))
+    if meeting["location"]:
+        lines.append(STRINGS["location_label"].format(location=meeting["location"]))
+    if meeting["description"]:
+        lines.append(STRINGS["description_label"].format(description=meeting["description"]))
+    
+    return "\n".join(lines)
 
 def get_subscribed_users_for_new(meeting):
     session = SessionLocal()

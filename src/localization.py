@@ -15,7 +15,7 @@ STRINGS = {
     "settings_notifications_saved": "Настройки уведомлений сохранены.",
     "yes_button": "Да",
     "no_button": "Нет",
-    "no_meetings": "Нет встреч по выбранному фильтру.",
+    "no_meetings": "Нет встреч.",
     "notify_before_meeting": "Напоминание о встрече:\n{details}",
     "notify_new_meeting": "Добавлена новая встреча:\n{details}",
     "meeting_details": "Название: {title}\nУкраина: {start_ua} - {end_ua}\nТаиланд: {start_th} - {end_th}\nУчастники: {attendants}\nМесто: {location}\nСсылка: {link}\nОписание: {desc}",
@@ -30,10 +30,10 @@ STRINGS = {
     "ukraine_time": "Украина: {start} - {end}",
     "thailand_time": "Таиланд: {start} - {end}",
     "location_label": "Место: {location}",
-    "link_label": "Ссылка: [ссылка]({link})",
+    "link_label": "Ссылка: {link}",
     "description_label": "Описание: {description}",
     "meetings_for_today": "ВСТРЕЧИ НА СЕГОДНЯ ({date}):",
     "meetings_for_tomorrow": "ВСТРЕЧИ НА ЗАВТРА ({date}):",
     "meetings_for_day_of_week": "ВСТРЕЧИ НА {weekday} ({date}):",
-    "weekdays": ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"]
+    "weekdays": ["Понедельник","Вторник","Среду","Четверг","Пятницу","Субботу","Воскресенье"]
 }
