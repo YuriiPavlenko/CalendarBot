@@ -77,6 +77,34 @@ async def send_new_updated_notifications(new_meetings, updated_meetings):
             await async_notify_new_meeting(meeting, subs)
             logger.info(f"Sent notifications for new/updated meeting {meeting['id']}")
 
+def meetings_differ(old_meeting, new_meeting):
+    """Compare two meetings to detect meaningful changes."""
+    if not old_meeting:
+        return True
+    
+    fields_to_compare = [
+        ('title', 'title'),
+        ('start_th', 'start_th'),
+        ('end_th', 'end_th'),
+        ('attendants', 'attendants'),
+        ('location', 'location'),
+        ('hangoutLink', 'hangoutLink'),
+        ('description', 'description')
+    ]
+    
+    for db_field, dict_field in fields_to_compare:
+        old_value = getattr(old_meeting, db_field) if isinstance(old_meeting, Meeting) else old_meeting[db_field]
+        new_value = new_meeting[dict_field]
+        
+        if db_field == 'attendants':
+            old_set = set(old_value.split(',')) if isinstance(old_value, str) else set(old_value)
+            new_set = set(new_value)
+            if old_set != new_set:
+                return True
+        elif old_value != new_value:
+            return True
+    return False
+
 async def refresh_meetings(initial_run=False):
     """
     Refresh meetings from the start of today to the end of next week.
@@ -95,17 +123,21 @@ async def refresh_meetings(initial_run=False):
     session = SessionLocal()
     prev_meetings = session.query(Meeting).all()
     logger.debug(f"Found {len(prev_meetings)} existing meetings in database")
-    prev_map = {m.id: m.updated for m in prev_meetings}
+    prev_map = {m.id: m for m in prev_meetings}
 
     new_meetings_list = []
     updated_meetings = []
-    for mid, m in new_map.items():
-        if mid not in prev_map:
-            logger.info(f"New meeting found: {m['title']} ({mid})")
-            new_meetings_list.append(m)
-        elif m["updated"] != prev_map[mid]:
-            logger.info(f"Updated meeting found: {m['title']} ({mid})")
-            updated_meetings.append(m)
+    
+    # Check for new and updated meetings
+    for mid, new_meeting in new_map.items():
+        prev_meeting = prev_map.get(mid)
+        if not prev_meeting:
+            logger.info(f"New meeting found: {new_meeting['title']} ({mid})")
+            new_meetings_list.append(new_meeting)
+        elif meetings_differ(prev_meeting, new_meeting):
+            logger.info(f"Updated meeting found: {new_meeting['title']} ({mid})")
+            logger.debug(f"Changes in meeting {mid}: prev={prev_meeting}, new={new_meeting}")
+            updated_meetings.append(new_meeting)
 
     # Delete old meetings
     session.query(Meeting).delete()
@@ -120,9 +152,9 @@ async def refresh_meetings(initial_run=False):
             start_th=m["start_th"],
             end_th=m["end_th"],
             attendants=",".join(m["attendants"]) if m["attendants"] else "",
-            hangoutLink=m.get("hangoutLink"),
-            location=m.get("location"),
-            description=m.get("description"),
+            hangoutLink=m.get("hangoutLink", ""),
+            location=m.get("location", ""),
+            description=m.get("description", ""),
             updated=m["updated"],
         )
         session.add(meeting)
@@ -131,8 +163,6 @@ async def refresh_meetings(initial_run=False):
     if not initial_run and (new_meetings_list or updated_meetings):
         logger.info(f"Sending notifications for {len(new_meetings_list)} new and {len(updated_meetings)} updated meetings")
         await send_new_updated_notifications(new_meetings_list, updated_meetings)
-    else:
-        logger.debug(f"Skipping notifications: initial_run={initial_run}, new={len(new_meetings_list)}, updated={len(updated_meetings)}")
     
     session.close()
     logger.info("Refresh meetings completed")
@@ -142,6 +172,8 @@ async def notification_job(_context):
     Check meetings starting soon and send notifications.
     """
     now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
+    logger.debug(f"Running notification job at {now}")
+    
     session = SessionLocal()
     meetings = session.query(Meeting).all()
     session.close()
@@ -150,23 +182,28 @@ async def notification_job(_context):
         start = m.start_th
         if start.tzinfo is None:
             start = start.replace(tzinfo=tz.gettz(TIMEZONE_TH))
+        
         diff = (start - now).total_seconds() / 60.0
-        diff_rounded = round(diff)
-        if diff_rounded in [60, 15, 5]:
-            meeting = {
-                "id": m.id,
-                "title": m.title,
-                "start_ua": m.start_ua,
-                "end_ua": m.end_ua,
-                "start_th": m.start_th,
-                "end_th": m.end_th,
-                "attendants": m.attendants.split(",") if m.attendants else [],
-                "hangoutLink": m.hangoutLink,
-                "location": m.location,
-                "description": m.description,
-                "updated": m.updated,
-            }
-            user_list = get_subscribed_users_for_before(meeting, diff_rounded)
-            if user_list:
-                await async_notify_before_meeting(meeting, user_list)
-                logger.info(f"Sent before meeting notifications for meeting {meeting['id']} starting in {diff_rounded} minutes")
+        
+        # Check notifications windows with some tolerance
+        notification_windows = [(60, 3), (15, 2), (5, 1)]  # (minutes, tolerance)
+        
+        for window, tolerance in notification_windows:
+            if abs(diff - window) <= tolerance:
+                meeting = {
+                    "id": m.id,
+                    "title": m.title,
+                    "start_ua": m.start_ua,
+                    "end_ua": m.end_ua,
+                    "start_th": m.start_th,
+                    "end_th": m.end_th,
+                    "attendants": m.attendants.split(",") if m.attendants else [],
+                    "hangoutLink": m.hangoutLink,
+                    "location": m.location,
+                    "description": m.description,
+                    "updated": m.updated,
+                }
+                user_list = get_subscribed_users_for_before(meeting, window)
+                if user_list:
+                    logger.info(f"Sending notifications for meeting {m.id} starting in {diff:.1f} minutes to {len(user_list)} users")
+                    await async_notify_before_meeting(meeting, user_list)
