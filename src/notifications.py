@@ -73,7 +73,7 @@ async def refresh_meetings():
                 new_count += 1
                 logger.debug(f"New meeting found: {m['title']} ({m['id']})")
                 for user in subscribers:
-                    if not user.filter_type or (user.username and user.username in m["attendants"]):
+                    if not user.filter_by_attendant or (user.username and user.username in m["attendants"]):
                         logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
                         await send_notification(user.user_id, m, is_new=True)
             elif (
@@ -90,7 +90,7 @@ async def refresh_meetings():
                 updated_count += 1
                 logger.debug(f"Updated meeting found: {m['title']} ({m['id']})")
                 for user in subscribers:
-                    if not user.filter_type or (user.username and user.username in m["attendants"]):
+                    if not user.filter_by_attendant or (user.username and user.username in m["attendants"]):
                         logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
                         await send_notification(user.user_id, m, is_new=True)
         
@@ -132,7 +132,7 @@ async def notification_job(_context):
                         )
                         
                         if should_notify:
-                            if not user.filter_type or (
+                            if not user.filter_by_attendant or (
                                 user.username and 
                                 user.username in (meeting.attendants.split(",") if meeting.attendants else [])
                             ):
