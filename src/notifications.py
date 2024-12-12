@@ -1,12 +1,12 @@
 import datetime
 from dateutil import tz
 
-from config import TIMEZONE_TH
-from database import SessionLocal, Meeting, UserSettings
-from localization import STRINGS
-from utils import get_next_week_th
-from google_calendar import fetch_meetings_from_gcal
-from formatters import formatted_meeting
+from .config import TIMEZONE_TH
+from .database import SessionLocal, Meeting, UserSettings
+from .localization import STRINGS
+from .utils import get_next_week_th
+from .google_calendar import fetch_meetings_from_gcal
+from .formatters import formatted_meeting
 
 application = None
 initialized = False
