@@ -41,11 +41,11 @@
       <form action="/save?user_id={{user_id}}" method="post">
         <h3 class="h5 mb-2">Фильтр встреч</h3>
         <div class="form-check mb-2">
-          <input class="form-check-input" type="radio" name="filter_type" value="all" {% if filter_type=='all' %}checked{% endif %}>
+          <input class="form-check-input" type="radio" name="show_only_mine" value="false" {% if not show_only_mine %}checked{% endif %}>
           <label class="form-check-label">Показывать все встречи</label>
         </div>
         <div class="form-check mb-3">
-          <input class="form-check-input" type="radio" name="filter_type" value="mine" {% if filter_type=='mine' %}checked{% endif %}>
+          <input class="form-check-input" type="radio" name="show_only_mine" value="true" {% if show_only_mine %}checked{% endif %}>
           <label class="form-check-label">Показывать только мои встречи</label>
         </div>
 
@@ -73,25 +73,32 @@
   </div>
 
   <h2 class="h4 mb-3">Встречи</h2>
-  {% if meetings and meetings|length > 0 %}
-    {% for m in meetings %}
-    <div class="meeting-card">
-      <strong>{{m.title}}</strong><br>
-      Украина: {{m.start_ua.strftime("%Y-%m-%d %H:%M")}} - {{m.end_ua.strftime("%Y-%m-%d %H:%M")}}<br>
-      Таиланд: {{m.start_th.strftime("%Y-%m-%d %H:%M")}} - {{m.end_th.strftime("%Y-%m-%d %H:%M")}}<br>
-      {% if m.attendants %}
-        Участники: {{m.attendants.split(', ')|join(', ')}}<br>
+  {% if grouped_meetings and grouped_meetings|length > 0 %}
+    {% for day in grouped_meetings %}
+      <h3 class="h5 mt-4 mb-3">{{day.day_name}} ({{day.date.strftime('%d.%m.%Y')}})</h3>
+      {% if day.meetings|length > 0 %}
+        {% for m in day.meetings %}
+          <div class="meeting-card">
+            <strong>{{m.title}}</strong><br>
+            Украина: {{m.start_ua.strftime("%H:%M")}} - {{m.end_ua.strftime("%H:%M")}}<br>
+            Таиланд: {{m.start_th.strftime("%H:%M")}} - {{m.end_th.strftime("%H:%M")}}<br>
+            {% if m.attendants %}
+              Участники: {{m.attendants.split(', ')|join(', ')}}<br>
+            {% endif %}
+            {% if m.hangoutLink %}
+              Ссылка: <a href="{{m.hangoutLink}}" target="_blank">Открыть</a><br>
+            {% endif %}
+            {% if m.location %}
+              Место: {{m.location}}<br>
+            {% endif %}
+            {% if m.description %}
+              Описание: {{m.description}}<br>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>Нет встреч</p>
       {% endif %}
-      {% if m.hangoutLink %}
-        Ссылка: <a href="{{m.hangoutLink}}" target="_blank">Открыть</a><br>
-      {% endif %}
-      {% if m.location %}
-        Место: {{m.location}}<br>
-      {% endif %}
-      {% if m.description %}
-        Описание: {{m.description}}<br>
-      {% endif %}
-    </div>
     {% endfor %}
   {% else %}
     <p>Нет предстоящих встреч.</p>
