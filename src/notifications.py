@@ -23,16 +23,19 @@ def initialize_notifications_variables(app):
 def get_subscribed_users_for_new(meeting):
     session = SessionLocal()
     users = session.query(UserSettings).all()
+    logger.debug(f"Found {len(users)} total users in settings")
     filtered = []
     for us in users:
+        logger.debug(f"Checking user {us.user_id}: notify_new={us.notify_new}, filter_type={us.filter_type}, username={us.username}")
         if us.notify_new:
             if us.filter_type:
                 if us.username and us.username in meeting["attendants"]:
                     filtered.append(us.user_id)
+                    logger.debug(f"Added user {us.user_id} (matched attendant)")
             else:
                 filtered.append(us.user_id)
+                logger.debug(f"Added user {us.user_id} (no filter)")
     session.close()
-    logger.debug(f"Subscribed users for new meeting {meeting['id']}: {filtered}")
     return filtered
 
 def get_subscribed_users_for_before(meeting, delta_minutes):
@@ -78,6 +81,7 @@ async def refresh_meetings(initial_run=False):
     """
     Refresh meetings from the start of today to the end of next week.
     """
+    logger.info("Starting refresh_meetings")
     start_of_today = datetime.datetime.now(tz.gettz(TIMEZONE_TH)).replace(hour=0, minute=0, second=0, microsecond=0)
     nw_start, nw_end = get_next_week_th()
     start = start_of_today
@@ -85,22 +89,27 @@ async def refresh_meetings(initial_run=False):
 
     logger.info(f"Fetching meetings from {start} to {end}")
     new_meetings = fetch_meetings_from_gcal(start, end)
+    logger.debug(f"Fetched {len(new_meetings)} meetings from Google Calendar")
     new_map = {m["id"]: m for m in new_meetings}
 
     session = SessionLocal()
     prev_meetings = session.query(Meeting).all()
+    logger.debug(f"Found {len(prev_meetings)} existing meetings in database")
     prev_map = {m.id: m.updated for m in prev_meetings}
 
     new_meetings_list = []
     updated_meetings = []
     for mid, m in new_map.items():
         if mid not in prev_map:
+            logger.info(f"New meeting found: {m['title']} ({mid})")
             new_meetings_list.append(m)
         elif m["updated"] != prev_map[mid]:
+            logger.info(f"Updated meeting found: {m['title']} ({mid})")
             updated_meetings.append(m)
 
     # Delete old meetings
     session.query(Meeting).delete()
+    
     # Add new meetings
     for m in new_meetings:
         meeting = Meeting(
@@ -110,7 +119,7 @@ async def refresh_meetings(initial_run=False):
             end_ua=m["end_ua"],
             start_th=m["start_th"],
             end_th=m["end_th"],
-            attendants=",".join(m["attendants"]),
+            attendants=",".join(m["attendants"]) if m["attendants"] else "",
             hangoutLink=m.get("hangoutLink"),
             location=m.get("location"),
             description=m.get("description"),
@@ -118,10 +127,15 @@ async def refresh_meetings(initial_run=False):
         )
         session.add(meeting)
     session.commit()
-    logger.info(f"Refreshed meetings. New: {len(new_meetings_list)}, Updated: {len(updated_meetings)}")
-    if not initial_run:
+    
+    if not initial_run and (new_meetings_list or updated_meetings):
+        logger.info(f"Sending notifications for {len(new_meetings_list)} new and {len(updated_meetings)} updated meetings")
         await send_new_updated_notifications(new_meetings_list, updated_meetings)
+    else:
+        logger.debug(f"Skipping notifications: initial_run={initial_run}, new={len(new_meetings_list)}, updated={len(updated_meetings)}")
+    
     session.close()
+    logger.info("Refresh meetings completed")
 
 async def notification_job(_context):
     """

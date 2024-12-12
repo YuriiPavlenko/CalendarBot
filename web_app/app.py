@@ -37,24 +37,24 @@ def get_day_name(date):
     return days[date.weekday()]
 
 def group_meetings_by_days(meetings):
-    # Create a dict with dates for next 7 days
+    # Create a dict with dates for all weekdays from today to next week's Friday
     today = datetime.now()
     dates = []
     current = today
-    while len(dates) < 7 and current.weekday() <= 4:  # Until Friday
-        dates.append(current.date())
+    while current.weekday() <= 4 or current <= today + timedelta(days=(11 - today.weekday())):
+        if current.weekday() <= 4:  # Only weekdays
+            dates.append(current.date())
         current += timedelta(days=1)
 
     # Group meetings by dates
     grouped_meetings = []
     for date in dates:
         day_meetings = [m for m in meetings if m.start_th.date() == date]
-        if day_meetings or date == today.date():  # Always include today even if empty
-            grouped_meetings.append({
-                'date': date,
-                'day_name': get_day_name(datetime.combine(date, datetime.min.time())),
-                'meetings': day_meetings
-            })
+        grouped_meetings.append({
+            'date': date,
+            'day_name': get_day_name(datetime.combine(date, datetime.min.time())),
+            'meetings': day_meetings
+        })
     
     return grouped_meetings
 
@@ -105,3 +105,34 @@ def save_settings():
     session.close()
 
     return redirect(url_for('index', user_id=user_id, saved=True))
+
+@app.route("/meetings")
+def get_meetings_json():
+    user_id = request.args.get("user_id", type=int)
+    if not user_id:
+        return "Missing user_id", 400
+
+    meetings = get_meetings(user_id)
+    grouped_meetings = group_meetings_by_days(meetings)
+    
+    return {
+        'meetings': [
+            {
+                'date': day['date'].strftime('%Y-%m-%d'),
+                'day_name': day['day_name'],
+                'meetings': [
+                    {
+                        'title': m.title,
+                        'start_ua': m.start_ua.strftime("%H:%M"),
+                        'end_ua': m.end_ua.strftime("%H:%M"),
+                        'start_th': m.start_th.strftime("%H:%M"),
+                        'end_th': m.end_th.strftime("%H:%M"),
+                        'attendants': m.attendants,
+                        'location': m.location,
+                        'hangoutLink': m.hangoutLink,
+                        'description': m.description
+                    } for m in day['meetings']
+                ]
+            } for day in grouped_meetings
+        ]
+    }
