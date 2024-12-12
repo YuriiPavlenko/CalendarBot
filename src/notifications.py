@@ -97,27 +97,66 @@ async def refresh_meetings(context=None):
                     ):
                         logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
                         await send_notification(user.user_id, m, is_new=True)
-            elif (
-                (existing_meeting.title or "") != (m.get("title") or "") or
-                existing_meeting.start_ua != m.get("start_ua") or
-                existing_meeting.end_ua != m.get("end_ua") or
-                existing_meeting.start_th != m.get("start_th") or
-                existing_meeting.end_th != m.get("end_th") or
-                (existing_meeting.attendants or "") != ",".join(m.get("attendants", []) or []) or  # Fixed operator
-                (existing_meeting.hangoutLink or "") != (m.get("hangoutLink") or "") or
-                (existing_meeting.location or "") != (m.get("location") or "") or
-                (existing_meeting.description or "") != (m.get("description") or "")
-            ):
-                updated_count += 1
-                # Only notify about actually updated meetings
-                logger.debug(f"Updated meeting found: {m['title']} ({m['id']})")
-                for user in subscribers:
-                    if user and user.user_id and (
-                        not user.filter_by_attendant or 
-                        (user.username and user.username in (m.get("attendants", []) or []))
-                    ):
-                        logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
-                        await send_notification(user.user_id, m, is_new=True)
+            else:
+                # Compare each field and log differences
+                title_old = existing_meeting.title or ""
+                title_new = m.get("title") or ""
+                if title_old != title_new:
+                    logger.debug(f"Title changed: '{title_old}' -> '{title_new}'")
+
+                if existing_meeting.start_ua != m.get("start_ua"):
+                    logger.debug(f"Start UA changed: {existing_meeting.start_ua} -> {m.get('start_ua')}")
+
+                if existing_meeting.end_ua != m.get("end_ua"):
+                    logger.debug(f"End UA changed: {existing_meeting.end_ua} -> {m.get('end_ua')}")
+
+                if existing_meeting.start_th != m.get("start_th"):
+                    logger.debug(f"Start TH changed: {existing_meeting.start_th} -> {m.get('start_th')}")
+
+                if existing_meeting.end_th != m.get("end_th"):
+                    logger.debug(f"End TH changed: {existing_meeting.end_th} -> {m.get('end_th')}")
+
+                attendants_old = existing_meeting.attendants or ""
+                attendants_new = ",".join(m.get("attendants", []) or [])
+                if attendants_old != attendants_new:
+                    logger.debug(f"Attendants changed: '{attendants_old}' -> '{attendants_new}'")
+
+                hangout_old = existing_meeting.hangoutLink or ""
+                hangout_new = m.get("hangoutLink") or ""
+                if hangout_old != hangout_new:
+                    logger.debug(f"Hangout link changed: '{hangout_old}' -> '{hangout_new}'")
+
+                location_old = existing_meeting.location or ""
+                location_new = m.get("location") or ""
+                if location_old != location_new:
+                    logger.debug(f"Location changed: '{location_old}' -> '{location_new}'")
+
+                desc_old = existing_meeting.description or ""
+                desc_new = m.get("description") or ""
+                if desc_old != desc_new:
+                    logger.debug(f"Description changed: '{desc_old}' -> '{desc_new}'")
+
+                if (
+                    title_old != title_new or
+                    existing_meeting.start_ua != m.get("start_ua") or
+                    existing_meeting.end_ua != m.get("end_ua") or
+                    existing_meeting.start_th != m.get("start_th") or
+                    existing_meeting.end_th != m.get("end_th") or
+                    attendants_old != attendants_new or
+                    hangout_old != hangout_new or
+                    location_old != location_new or
+                    desc_old != desc_new
+                ):
+                    updated_count += 1
+                    # Only notify about actually updated meetings
+                    logger.debug(f"Updated meeting found: {m['title']} ({m['id']})")
+                    for user in subscribers:
+                        if user and user.user_id and (
+                            not user.filter_by_attendant or 
+                            (user.username and user.username in (m.get("attendants", []) or []))
+                        ):
+                            logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
+                            await send_notification(user.user_id, m, is_new=True)
         
         # Only after comparison, update the database
         session.query(Meeting).delete()
