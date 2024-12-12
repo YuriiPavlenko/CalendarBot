@@ -70,65 +70,69 @@
     </div>
 
     <div class="meetings-section">
-      {% if grouped_meetings and grouped_meetings|length > 0 %}
-        {% for day in grouped_meetings %}
-          <div class="day-section">
-            <h3>
-              <span class="day-name">{{day.day_name}}</span>
-              <span class="day-date">{{day.date.strftime('%d.%m.%Y')}}</span>
-            </h3>
-            {% if day.meetings|length > 0 %}
-              {% for m in day.meetings %}
-                <div class="meeting-card">
-                  <h4>{{m.title}}</h4>
-                  <div class="time-info">
-                    <div>
-                      <i class="bi bi-globe"></i>
-                      <span class="location-label">Украина:</span>
-                      {{m.start_ua.strftime("%H:%M")}} - {{m.end_ua.strftime("%H:%M")}}
-                    </div>
-                    <div>
-                      <i class="bi bi-globe-asia-australia"></i>
-                      <span class="location-label">Таиланд:</span>
-                      {{m.start_th.strftime("%H:%M")}} - {{m.end_th.strftime("%H:%M")}}
-                    </div>
+      {% for day in grouped_meetings %}
+        <div class="day-section">
+          <h3>
+            <span class="day-name">{{day.day_name}}</span>
+            <span class="day-date">{{day.date.strftime('%d.%m.%Y')}}</span>
+          </h3>
+          {% if day.meetings and day.meetings|length > 0 %}
+            {% for m in day.meetings %}
+              <div class="meeting-card">
+                <h4>{{m.title}}</h4>
+                <div class="time-info">
+                  <div>
+                    <i class="bi bi-globe"></i>
+                    <span class="location-label">Украина:</span>
+                    {{m.start_ua.strftime("%H:%M")}} - {{m.end_ua.strftime("%H:%M")}}
                   </div>
-                  {% if m.attendants %}
-                    <div class="meeting-detail">
-                      <i class="bi bi-people"></i>
-                      {{m.attendants.split(', ')|join(', ')}}
-                    </div>
-                  {% endif %}
-                  {% if m.location %}
-                    <div class="meeting-detail">
-                      <i class="bi bi-geo-alt"></i>
-                      {{m.location}}
-                    </div>
-                  {% endif %}
-                  {% if m.hangoutLink %}
-                    <div class="meeting-detail">
-                      <a href="{{m.hangoutLink}}" target="_blank" class="meeting-link">
-                        <i class="bi bi-camera-video"></i>
-                        Присоединиться
-                      </a>
-                    </div>
-                  {% endif %}
-                  {% if m.description %}
-                    <div class="meeting-detail">
-                      <i class="bi bi-card-text"></i>
-                      {{m.description}}
-                    </div>
-                  {% endif %}
+                  <div>
+                    <i class="bi bi-globe-asia-australia"></i>
+                    <span class="location-label">Таиланд:</span>
+                    {{m.start_th.strftime("%H:%M")}} - {{m.end_th.strftime("%H:%M")}}
+                  </div>
                 </div>
-              {% endfor %}
-            {% else %}
-              <p>Нет встреч</p>
-            {% endif %}
-          </div>
-        {% endfor %}
+                {% if m.attendants %}
+                  <div class="meeting-detail">
+                    <i class="bi bi-people"></i>
+                    {{m.attendants.split(', ')|join(', ')}}
+                  </div>
+                {% endif %}
+                {% if m.location %}
+                  <div class="meeting-detail">
+                    <i class="bi bi-geo-alt"></i>
+                    {{m.location}}
+                  </div>
+                {% endif %}
+                {% if m.hangoutLink %}
+                  <div class="meeting-detail">
+                    <a href="{{m.hangoutLink}}" target="_blank" class="meeting-link">
+                      <i class="bi bi-camera-video"></i>
+                      Присоединиться
+                    </a>
+                  </div>
+                {% endif %}
+                {% if m.description %}
+                  <div class="meeting-detail">
+                    <i class="bi bi-card-text"></i>
+                    {{m.description}}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="no-meetings-card">
+              <i class="bi bi-calendar-x"></i>
+              <p>Нет встреч на этот день</p>
+            </div>
+          {% endif %}
+        </div>
       {% else %}
-        <p>Нет предстоящих встреч.</p>
-      {% endif %}
+        <div class="no-meetings-global">
+          <i class="bi bi-calendar-x"></i>
+          <p>Нет предстоящих встреч на ближайшие дни</p>
+        </div>
+      {% endfor %}
     </div>
   </main>
 </div>
