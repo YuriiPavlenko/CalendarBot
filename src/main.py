@@ -3,7 +3,7 @@ import logging.config
 
 logging.config.fileConfig("src/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
-global application
+
 from telegram import BotCommand
 from telegram.ext import Application
 from .config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL, WEBHOOK_PORT

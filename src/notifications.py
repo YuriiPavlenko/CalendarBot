@@ -41,7 +41,12 @@ async def send_notification(user_id, meeting, is_new=False):
     except Exception as e:
         logger.error(f"Failed to send notification to user {user_id}: {str(e)}")
 
-async def refresh_meetings():
+async def refresh_meetings(context=None):
+    """Refresh meetings from Google Calendar.
+    
+    Args:
+        context: telegram.ext.CallbackContext, optional - Required for job queue compatibility
+    """
     logger.info("Starting meetings refresh")
     
     now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
