@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for
-from ..src.database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
-from ..src.utils import get_end_of_next_week
+from src.database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
+from src.utils import get_end_of_next_week
 from datetime import datetime
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
