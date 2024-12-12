@@ -53,10 +53,26 @@ if __name__ == "__main__":
     async def post_init(app):
         await startup(app)
 
+     # Async function to set commands
+    async def set_commands():
+        await application.bot.set_my_commands([
+            BotCommand("start", STRINGS["menu_start"]),
+            BotCommand("get_today", STRINGS["menu_get_today"]),
+            BotCommand("get_tomorrow", STRINGS["menu_get_tomorrow"]),
+            BotCommand("get_rest_week", STRINGS["menu_get_rest_week"]),
+            BotCommand("get_next_week", STRINGS["menu_get_next_week"]),
+        ])
+
+    # Post-initialization tasks
+    async def post_init(app):
+        logger.debug("Setting commands...")
+        await set_commands()  # Await the set_commands coroutine
+        logger.debug("Commands set successfully.")
+        await startup(app)  # Include your startup tasks here if needed
+
+    # Attach the post_init hook
     application.post_init = post_init
-    logger.debug("Setting commands...")
-    setcommand =  set_commands()
-    logger.debug("Running webhook...")
+
     application.run_webhook(
         listen="0.0.0.0",
         port=int(WEBHOOK_PORT),
