@@ -97,12 +97,31 @@ def formatted_meeting(meeting, user_timezone='Europe/Kiev'):
     # Handle both dict and Meeting object formats
     title = meeting.get('title') if isinstance(meeting, dict) else meeting.title
     lines.append(title)
-    
-    # Add timezone-aware times
-    time_str = format_meeting_time(meeting, user_timezone)
-    lines.append(time_str)
 
-    # Handle attendants for both formats
+    # Format times for both Thai and Ukrainian timezones
+    if isinstance(meeting, dict):
+        start_th = meeting.get('start_th')
+        end_th = meeting.get('end_th')
+        start_ua = meeting.get('start_ua')
+        end_ua = meeting.get('end_ua')
+    else:
+        # Convert UTC times to respective timezones
+        start_th = convert_to_timezone(meeting.start_time, TIMEZONE_TH)
+        end_th = convert_to_timezone(meeting.end_time, TIMEZONE_TH)
+        start_ua = convert_to_timezone(meeting.start_time, 'Europe/Kiev')
+        end_ua = convert_to_timezone(meeting.end_time, 'Europe/Kiev')
+
+    # Add formatted times
+    lines.append(STRINGS["thailand_time"].format(
+        start=start_th.strftime("%H:%M"),
+        end=end_th.strftime("%H:%M")
+    ))
+    lines.append(STRINGS["ukraine_time"].format(
+        start=start_ua.strftime("%H:%M"),
+        end=end_ua.strftime("%H:%M")
+    ))
+
+    # Handle attendants
     attendants = (
         meeting.get('attendants', []) if isinstance(meeting, dict)
         else (meeting.attendants.split(',') if meeting.attendants else [])
@@ -110,7 +129,7 @@ def formatted_meeting(meeting, user_timezone='Europe/Kiev'):
     if attendants:
         lines.append("Участники: " + ", ".join(attendants))
 
-    # Handle optional fields for both formats
+    # Handle optional fields
     hangout_link = meeting.get('hangoutLink') if isinstance(meeting, dict) else meeting.hangoutLink
     if hangout_link:
         lines.append(STRINGS["link_label"].format(link=hangout_link))
