@@ -13,7 +13,7 @@ from .notifications import initialize_notifications_variables, refresh_meetings,
 from .localization import STRINGS
 
 async def error_handler(update, context):
-    logger.error("Unhandled exception occurred", exc_info=True)
+    logger.error(f"Exception while handling an update: {update}", exc_info=context.error)
 
 async def startup(application):
     # Initialize meetings without using the cache
