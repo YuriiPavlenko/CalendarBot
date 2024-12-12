@@ -1,11 +1,14 @@
 import logging
-from .database import SessionLocal, get_user_settings
-from .localization import STRINGS
-from .utils import filter_meetings
 import datetime
-from .config import TIMEZONE_TH
 from dateutil import tz
 from sqlalchemy import text
+
+from .config import TIMEZONE_TH
+from .database import SessionLocal, get_user_settings
+from .localization import STRINGS
+from .utils import filter_meetings, get_next_week_th
+from .google_calendar import fetch_meetings_from_gcal
+from .cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -18,32 +21,17 @@ def initialize_notifications_variables(app):
     application = app
 
 def formatted_meeting(meeting):
-    # desc = m["description"] or ""
-    # loc = m["location"] or ""
-    # link = m["hangoutLink"] or ""
-    # attendants_str = ", ".join(m["attendants"]) if m["attendants"] else ""
-    # return STRINGS["meeting_details"].format(
-    #     title=m["title"],
-    #     start_ua=m["start_ua"].strftime("%Y-%m-%d %H:%M"),
-    #     start_th=m["start_th"].strftime("%Y-%m-%d %H:%M"),
-    #     end_ua=m["end_ua"].strftime("%Y-%m-%d %H:%M"),
-    #     end_th=m["end_th"].strftime("%Y-%m-%d %H:%M"),
-    #     attendants=attendants_str,
-    #     location=loc,
-    #     link=link,
-    #     desc=desc
-    # )
     lines = []
     title = meeting["title"]
     start_ua = meeting["start_ua"].strftime("%H:%M")
     end_ua = meeting["end_ua"].strftime("%H:%M")
     start_th = meeting["start_th"].strftime("%H:%M")
     end_th = meeting["end_th"].strftime("%H:%M")
-    
+
     lines.append(title)
     lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
     lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
-    
+
     if meeting["attendants"]:
         lines.append("Участники: " + ", ".join(meeting["attendants"]))
     if meeting["hangoutLink"]:
@@ -52,7 +40,7 @@ def formatted_meeting(meeting):
         lines.append(STRINGS["location_label"].format(location=meeting["location"]))
     if meeting["description"]:
         lines.append(STRINGS["description_label"].format(description=meeting["description"]))
-    
+
     return "\n".join(lines)
 
 def get_subscribed_users_for_new(meeting):
@@ -140,15 +128,14 @@ async def send_new_updated_notifications(new_meetings, updated_meetings):
             await async_notify_new_meeting(um, subs)
 
 async def refresh_meetings(initial_run=False):
-    # from today to end of next week
-    now_th = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
-    from .utils import get_next_week_th
+    """
+    Refresh meetings from the start of today to the end of next week.
+    """
+    start_of_today = datetime.datetime.now(tz.gettz(TIMEZONE_TH)).replace(hour=0, minute=0, second=0, microsecond=0)
     nw_start, nw_end = get_next_week_th()
-    start = now_th
+    start = start_of_today
     end = nw_end
 
-    from .google_calendar import fetch_meetings_from_gcal
-    from .cache import cache
     new_meetings = fetch_meetings_from_gcal(start, end)
     new_map = {m["id"]: m for m in new_meetings}
     new_meetings_list, updated_meetings = handle_new_and_updated_meetings_sync(new_map)
@@ -159,15 +146,16 @@ async def refresh_meetings(initial_run=False):
         await send_new_updated_notifications(new_meetings_list, updated_meetings)
 
 async def notification_job(_context):
-    # Check meetings starting soon
-    from .cache import cache
+    """
+    Check meetings starting soon and send notifications.
+    """
     meetings = cache.get_meetings()
     now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
     for m in meetings:
         start = m["start_th"]
         diff = (start - now).total_seconds() / 60.0
         diff_rounded = round(diff)
-        if diff_rounded in [60,15,5]:
+        if diff_rounded in [60, 15, 5]:
             user_list = get_subscribed_users_for_before(m, diff_rounded)
             if user_list:
                 await async_notify_before_meeting(m, user_list)
