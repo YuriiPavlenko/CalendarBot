@@ -44,6 +44,7 @@ if __name__ == "__main__":
             BotCommand("get_rest_week", STRINGS["menu_get_rest_week"]),
             BotCommand("get_next_week", STRINGS["menu_get_next_week"]),
         ])
+        return 0
 
     # Initialize notification logic
     initialize_notifications_variables(application)
@@ -53,7 +54,8 @@ if __name__ == "__main__":
         await startup(app)
 
     application.post_init = post_init
-
+    logger.debug("Setting commands...")
+    setcommand =  set_commands()
     logger.debug("Running webhook...")
     application.run_webhook(
         listen="0.0.0.0",

@@ -83,7 +83,7 @@ async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT
 
     filtered_range = [m for m in meetings if m["start_th"] >= start and m["start_th"] < end]
     filtered = filter_meetings(filtered_range, filter_type, user_identifier)
-    text = format_meetings_list(filtered, "today" if period in ["today","tomorrow"] else "week")
+    text = format_meetings_list(filtered, period)
     await update.message.reply_text(text)
 
 async def get_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
