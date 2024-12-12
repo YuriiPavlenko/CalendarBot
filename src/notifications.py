@@ -113,8 +113,8 @@ async def refresh_meetings(context=None):
                         ):
                             logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
                             await send_notification(user.user_id, m, is_new=True)
-
-                # Compare each field and log differences
+            else:
+                # Move comparison block inside the else clause
                 title_old = existing_meeting.title or ""
                 title_new = m.get("title") or ""
                 if title_old != title_new:
@@ -142,25 +142,23 @@ async def refresh_meetings(context=None):
 
                 if (
                     title_old != title_new or
-                    not compare_datetimes(existing_meeting.start_ua, m.get("start_ua")) or
-                    not compare_datetimes(existing_meeting.end_ua, m.get("end_ua")) or
-                    not compare_datetimes(existing_meeting.start_th, m.get("start_th")) or
-                    not compare_datetimes(existing_meeting.end_th, m.get("end_th")) or
+                    not compare_datetimes(existing_meeting.start_time, m.get("start_ua")) or
+                    not compare_datetimes(existing_meeting.end_time, m.get("end_ua")) or
                     attendants_old != attendants_new or
                     hangout_old != hangout_new or
                     location_old != location_new or
                     desc_old != desc_new
                 ):
                     updated_count += 1
-                    # Only notify about actually updated meetings
                     logger.debug(f"Updated meeting found: {m['title']} ({m['id']})")
-                    for user in subscribers:
-                        if user and user.user_id and (
-                            not user.filter_by_attendant or 
-                            (user.username and user.username in (m.get("attendants", []) or []))
-                        ):
-                            logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
-                            await send_notification(user.user_id, m, is_new=True)
+                    if subscribers:
+                        for user in subscribers:
+                            if user and user.user_id and (
+                                not user.filter_by_attendant or 
+                                (user.username and user.username in (m.get("attendants", []) or []))
+                            ):
+                                logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
+                                await send_notification(user.user_id, m, is_new=True)
         
         # Update database regardless of subscribers
         session.query(Meeting).delete()

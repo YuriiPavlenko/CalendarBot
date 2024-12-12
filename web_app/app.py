@@ -1,8 +1,9 @@
 from flask import Flask, request, render_template, redirect, url_for
 from src.database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
-from src.utils import get_end_of_next_week
+from src.utils import get_end_of_next_week, convert_meeting_to_display
 from datetime import datetime, timedelta
 import pytz
+from dateutil import tz
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
@@ -149,3 +150,28 @@ def get_meetings_json():
             } for day in grouped_meetings
         ]
     }
+
+@app.get("/api/meetings/")
+async def get_meetings(
+    start: datetime = Query(default=None),
+    end: datetime = Query(default=None)
+):
+    if start and not start.tzinfo:
+        start = start.replace(tzinfo=tz.UTC)
+    if end and not end.tzinfo:
+        end = end.replace(tzinfo=tz.UTC)
+    
+    if not start:
+        start = datetime.now(tz.UTC)
+    if not end:
+        end = start + timedelta(days=7)
+    
+    session = SessionLocal()
+    try:
+        meetings = session.query(Meeting).filter(
+            Meeting.start_time >= start,
+            Meeting.start_time < end
+        ).all()
+        return [convert_meeting_to_display(m) for m in meetings]
+    finally:
+        session.close()

@@ -6,6 +6,31 @@ function getUserId() {
     return urlParams.get('user_id');
 }
 
+function formatMeetingTime(utcTime, timezone = 'Europe/Kiev') {
+    return moment.utc(utcTime).tz(timezone).format('HH:mm DD.MM.YYYY');
+}
+
+function displayMeeting(meeting) {
+    return `
+        <div class="meeting">
+            <h3>${meeting.title}</h3>
+            <p>Thailand: ${formatMeetingTime(meeting.start_time, 'Asia/Bangkok')} - ${formatMeetingTime(meeting.end_time, 'Asia/Bangkok')}</p>
+            <p>Ukraine: ${formatMeetingTime(meeting.start_time, 'Europe/Kiev')} - ${formatMeetingTime(meeting.end_time, 'Europe/Kiev')}</p>
+            ${meeting.attendants ? `<p>Attendants: ${meeting.attendants.join(', ')}</p>` : ''}
+            ${meeting.hangoutLink ? `<p>Link: <a href="${meeting.hangoutLink}">${meeting.hangoutLink}</a></p>` : ''}
+            ${meeting.location ? `<p>Location: ${meeting.location}</p>` : ''}
+            ${meeting.description ? `<p>Description: ${meeting.description}</p>` : ''}
+        </div>
+    `;
+}
+
+async function fetchMeetings(startDate, endDate) {
+    const start = moment(startDate).utc().format();
+    const end = moment(endDate).utc().format();
+    const response = await fetch(`/api/meetings/?start=${start}&end=${end}`);
+    return await response.json();
+}
+
 function updateMeetings() {
     const userId = getUserId();
     if (!userId) return;
