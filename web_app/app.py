@@ -29,7 +29,8 @@ def get_meetings(user_id):
     session.close()
     return formatted_meetings
 
-def get_day_name(date):
+def get_day_name(date, th_tz=tz.gettz(TIMEZONE_TH)):
+    """Get localized day name, comparing with Thai timezone's today."""
     days = {
         0: 'Понедельник',
         1: 'Вторник',
@@ -39,36 +40,50 @@ def get_day_name(date):
         5: 'Суббота',
         6: 'Воскресенье'
     }
-    if date.date() == datetime.now().date():
+    
+    # Get current date in Thai timezone
+    now_th = datetime.now(th_tz).date()
+    
+    if date == now_th:
         return "Сегодня"
-    if date.date() == (datetime.now() + timedelta(days=1)).date():
+    if date == (now_th + timedelta(days=1)):
         return "Завтра"
     return days[date.weekday()]
 
 def group_meetings_by_days(meetings):
-    # Start from today and get all weekdays until next week's Friday
-    today = datetime.now().date()
+    """Group meetings by their Thai timezone dates."""
+    th_tz = tz.gettz(TIMEZONE_TH)
+    
+    # Get today in Thai timezone
+    today_th = datetime.now(th_tz).date()
+    
+    # Calculate dates range
     dates = []
-    current = today
+    current = today_th
     
     # Calculate the target end date (next week's Friday)
-    days_until_friday = (4 - today.weekday()) % 7  # Days until this week's Friday
+    days_until_friday = (4 - today_th.weekday()) % 7
     if days_until_friday == 0:
-        days_until_friday = 7  # Go to next Friday
-    target_end = today + timedelta(days=days_until_friday + 7)  # Add another week
+        days_until_friday = 7
+    target_end = today_th + timedelta(days=days_until_friday + 7)
     
     while current <= target_end:
-        if current.weekday() <= 4:  # Only weekdays (Monday-Friday)
+        if current.weekday() <= 4:  # Only weekdays
             dates.append(current)
         current += timedelta(days=1)
-
+    
+    # Group meetings by their Thai timezone date
     grouped_meetings = []
     for date in dates:
-        # Use start_th from the converted meeting format
-        day_meetings = [m for m in meetings if m["start_th"].date() == date]
+        # Use Thai timezone date for comparison
+        day_meetings = [
+            m for m in meetings 
+            if m["start_th"].astimezone(th_tz).date() == date
+        ]
+        
         grouped_meetings.append({
             'date': date,
-            'day_name': get_day_name(datetime.combine(date, datetime.min.time())),
+            'day_name': get_day_name(date, th_tz),
             'meetings': day_meetings
         })
     
