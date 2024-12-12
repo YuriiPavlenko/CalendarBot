@@ -35,10 +35,6 @@ def index():
     nnew = us.notify_new
     session.close()
 
-    today_meetings = get_filtered_meetings(user_id, "today")
-    tomorrow_meetings = get_filtered_meetings(user_id, "tomorrow")
-    rest_week_meetings = get_filtered_meetings(user_id, "rest_week")
-    next_week_meetings = get_filtered_meetings(user_id, "next_week")
     meetings = get_meetings(user_id)
 
     return render_template("index.html",
@@ -48,10 +44,6 @@ def index():
                            notify_15m=n15m,
                            notify_5m=n5m,
                            notify_new=nnew,
-                           today_meetings=today_meetings,
-                           tomorrow_meetings=tomorrow_meetings,
-                           rest_week_meetings=rest_week_meetings,
-                           next_week_meetings=next_week_meetings,
                            meetings=meetings,
                            settings_saved=settings_saved)
 
