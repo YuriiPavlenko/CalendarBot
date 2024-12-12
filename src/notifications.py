@@ -125,6 +125,8 @@ async def notification_job(_context):
 
     for m in meetings:
         start = m.start_th
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=tz.gettz(TIMEZONE_TH))
         diff = (start - now).total_seconds() / 60.0
         diff_rounded = round(diff)
         if diff_rounded in [60, 15, 5]:
