@@ -20,6 +20,18 @@ def safe_get_meeting_data(meeting, field, default=None):
         return getattr(meeting, field, default)
     return meeting.get(field, default)
 
+def normalize_datetime(dt):
+    """Normalize datetime by removing timezone info."""
+    if dt is None:
+        return None
+    if hasattr(dt, 'replace'):
+        return dt.replace(tzinfo=None)
+    return dt
+
+def compare_datetimes(dt1, dt2):
+    """Compare two datetimes after normalization."""
+    return normalize_datetime(dt1) == normalize_datetime(dt2)
+
 async def send_notification(user_id, meeting, is_new=False):
     if not user_id or not meeting:
         logger.error("Invalid user_id or meeting data")
@@ -104,16 +116,16 @@ async def refresh_meetings(context=None):
                 if title_old != title_new:
                     logger.debug(f"Title changed: '{title_old}' -> '{title_new}'")
 
-                if existing_meeting.start_ua != m.get("start_ua"):
+                if not compare_datetimes(existing_meeting.start_ua, m.get("start_ua")):
                     logger.debug(f"Start UA changed: {existing_meeting.start_ua} -> {m.get('start_ua')}")
 
-                if existing_meeting.end_ua != m.get("end_ua"):
+                if not compare_datetimes(existing_meeting.end_ua, m.get("end_ua")):
                     logger.debug(f"End UA changed: {existing_meeting.end_ua} -> {m.get('end_ua')}")
 
-                if existing_meeting.start_th != m.get("start_th"):
+                if not compare_datetimes(existing_meeting.start_th, m.get("start_th")):
                     logger.debug(f"Start TH changed: {existing_meeting.start_th} -> {m.get('start_th')}")
 
-                if existing_meeting.end_th != m.get("end_th"):
+                if not compare_datetimes(existing_meeting.end_th, m.get("end_th")):
                     logger.debug(f"End TH changed: {existing_meeting.end_th} -> {m.get('end_th')}")
 
                 attendants_old = existing_meeting.attendants or ""
@@ -138,10 +150,10 @@ async def refresh_meetings(context=None):
 
                 if (
                     title_old != title_new or
-                    existing_meeting.start_ua != m.get("start_ua") or
-                    existing_meeting.end_ua != m.get("end_ua") or
-                    existing_meeting.start_th != m.get("start_th") or
-                    existing_meeting.end_th != m.get("end_th") or
+                    not compare_datetimes(existing_meeting.start_ua, m.get("start_ua")) or
+                    not compare_datetimes(existing_meeting.end_ua, m.get("end_ua")) or
+                    not compare_datetimes(existing_meeting.start_th, m.get("start_th")) or
+                    not compare_datetimes(existing_meeting.end_th, m.get("end_th")) or
                     attendants_old != attendants_new or
                     hangout_old != hangout_new or
                     location_old != location_new or
