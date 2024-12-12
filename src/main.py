@@ -36,13 +36,14 @@ if __name__ == "__main__":
     application.add_handler(get_rest_week_handler)
     application.add_handler(get_next_week_handler)
 
-    application.bot.set_my_commands([
-        BotCommand("start", STRINGS["menu_start"]),
-        BotCommand("get_today", STRINGS["menu_get_today"]),
-        BotCommand("get_tomorrow", STRINGS["menu_get_tomorrow"]),
-        BotCommand("get_rest_week", STRINGS["menu_get_rest_week"]),
-        BotCommand("get_next_week", STRINGS["menu_get_next_week"]),
-    ])
+    async def set_commands():
+        await application.bot.set_my_commands([
+            BotCommand("start", STRINGS["menu_start"]),
+            BotCommand("get_today", STRINGS["menu_get_today"]),
+            BotCommand("get_tomorrow", STRINGS["menu_get_tomorrow"]),
+            BotCommand("get_rest_week", STRINGS["menu_get_rest_week"]),
+            BotCommand("get_next_week", STRINGS["menu_get_next_week"]),
+        ])
 
     # Initialize notification logic
     initialize_notifications_variables(application)
