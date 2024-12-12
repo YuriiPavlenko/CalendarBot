@@ -2,7 +2,6 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify
 from src.database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
 from src.utils import get_end_of_next_week, convert_meeting_to_display
 from datetime import datetime, timedelta
-import pytz
 from dateutil import tz
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
@@ -13,19 +12,22 @@ def get_meetings(user_id):
     show_only_mine = us.filter_by_attendant
     user_identifier = us.username if us.username else f"@{user_id}"
     
-    # Use start of today instead of now
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    end_next_week = get_end_of_next_week()
+    # Convert today to UTC for database query
+    today = datetime.now(tz.UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_next_week = get_end_of_next_week().astimezone(tz.UTC)
     
     meetings_query = session.query(Meeting).filter(
-        Meeting.start_th >= today,
-        Meeting.start_th <= end_next_week
+        Meeting.start_time >= today,
+        Meeting.start_time <= end_next_week
     )
     if show_only_mine:
         meetings_query = meetings_query.filter(Meeting.attendants.contains(user_identifier))
     meetings = meetings_query.all()
+    
+    # Convert meetings to display format with proper timezones
+    formatted_meetings = [convert_meeting_to_display(m) for m in meetings]
     session.close()
-    return meetings
+    return formatted_meetings
 
 def get_day_name(date):
     days = {
@@ -60,10 +62,10 @@ def group_meetings_by_days(meetings):
             dates.append(current)
         current += timedelta(days=1)
 
-    # ...existing code for grouping meetings...
     grouped_meetings = []
     for date in dates:
-        day_meetings = [m for m in meetings if m.start_th.date() == date]
+        # Use start_th from the converted meeting format
+        day_meetings = [m for m in meetings if m["start_th"].date() == date]
         grouped_meetings.append({
             'date': date,
             'day_name': get_day_name(datetime.combine(date, datetime.min.time())),
@@ -136,15 +138,15 @@ def get_meetings_json():
                 'day_name': day['day_name'],
                 'meetings': [
                     {
-                        'title': m.title,
-                        'start_ua': m.start_ua.strftime("%H:%M"),
-                        'end_ua': m.end_ua.strftime("%H:%M"),
-                        'start_th': m.start_th.strftime("%H:%M"),
-                        'end_th': m.end_th.strftime("%H:%M"),
-                        'attendants': m.attendants,
-                        'location': m.location,
-                        'hangoutLink': m.hangoutLink,
-                        'description': m.description
+                        'title': m["title"],
+                        'start_ua': m["start_ua"].strftime("%H:%M"),
+                        'end_ua': m["end_ua"].strftime("%H:%M"),
+                        'start_th': m["start_th"].strftime("%H:%M"),
+                        'end_th': m["end_th"].strftime("%H:%M"),
+                        'attendants': m["attendants"],
+                        'location': m["location"],
+                        'hangoutLink': m["hangoutLink"],
+                        'description': m["description"]
                     } for m in day['meetings']
                 ]
             } for day in grouped_meetings
