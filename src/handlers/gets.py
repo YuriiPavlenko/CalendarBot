@@ -1,52 +1,64 @@
 import logging
+from datetime import datetime, timedelta
+from dateutil import tz
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from ..database import SessionLocal, get_user_settings, Meeting
-from ..utils import filter_meetings, get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
+from ..database import SessionLocal, Meeting
+from ..utils import get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
 from ..localization import STRINGS
 from ..formatters import format_meetings_list
+from ..config import TIMEZONE_TH
 
 logger = logging.getLogger(__name__)
 
-async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT_TYPE, period):
-    user_id = update.effective_user.id
+async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT_TYPE, period: str):
     session = SessionLocal()
-    us = get_user_settings(session, user_id)
-    filter_type = us.filter_by_attendant
-    user_identifier = us.username if us.username else f"@{user_id}"
+    try:
+        # Get time range in TH timezone
+        if period == "today":
+            start_th, end_th = get_today_th()
+        elif period == "tomorrow":
+            start_th, end_th = get_tomorrow_th()
+        elif period == "rest":
+            start_th, end_th = get_rest_week_th()
+        else:  # next week
+            start_th, end_th = get_next_week_th()
 
-    if period == "today":
-        start, end = get_today_th()
-    elif period == "tomorrow":
-        start, end = get_tomorrow_th()
-    elif period == "rest_week":
-        start, end = get_rest_week_th()
-    elif period == "next_week":
-        start, end = get_next_week_th()
+        # Convert to UTC for database query
+        start_utc = start_th.astimezone(tz.UTC)
+        end_utc = end_th.astimezone(tz.UTC)
+        
+        # Query using UTC times
+        meetings = session.query(Meeting).filter(
+            Meeting.start_time >= start_utc,
+            Meeting.start_time < end_utc
+        ).all()
 
-    meetings = session.query(Meeting).filter(Meeting.start_th >= start, Meeting.start_th < end).all()
-    session.close()
+        # Convert meetings to display format
+        formatted_meetings = []
+        for m in meetings:
+            start_th = m.start_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz(TIMEZONE_TH))
+            end_th = m.end_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz(TIMEZONE_TH))
+            start_ua = m.start_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz('Europe/Kiev'))
+            end_ua = m.end_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz('Europe/Kiev'))
+            
+            formatted_meetings.append({
+                "id": m.id,
+                "title": m.title,
+                "start_th": start_th,
+                "end_th": end_th,
+                "start_ua": start_ua,
+                "end_ua": end_ua,
+                "attendants": m.attendants.split(",") if m.attendants else [],
+                "hangoutLink": m.hangoutLink,
+                "location": m.location,
+                "description": m.description,
+            })
 
-    meetings_list = []
-    for m in meetings:
-        meeting = {
-            "id": m.id,
-            "title": m.title,
-            "start_ua": m.start_ua,
-            "end_ua": m.end_ua,
-            "start_th": m.start_th,
-            "end_th": m.end_th,
-            "attendants": m.attendants.split(",") if m.attendants else [],
-            "hangoutLink": m.hangoutLink,
-            "location": m.location,
-            "description": m.description,
-            "updated": m.updated,
-        }
-        meetings_list.append(meeting)
-
-    filtered = filter_meetings(meetings_list, filter_type, user_identifier)
-    text = format_meetings_list(filtered, period)
-    await update.message.reply_text(text)
+        text = format_meetings_list(formatted_meetings, period)
+        await update.message.reply_text(text)
+    finally:
+        session.close()
 
 async def get_today(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _get_meetings_for_period(update, context, "today")
