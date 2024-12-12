@@ -1,4 +1,5 @@
 import datetime
+import logging
 from dateutil import tz
 
 from .config import TIMEZONE_TH
@@ -8,6 +9,8 @@ from .utils import get_next_week_th
 from .google_calendar import fetch_meetings_from_gcal
 from .formatters import formatted_meeting
 
+logger = logging.getLogger(__name__)
+
 application = None
 initialized = False
 previous_map = {}
@@ -15,8 +18,7 @@ previous_map = {}
 def initialize_notifications_variables(app):
     global application
     application = app
-
-# Removed formatted_meeting function
+    logger.info("Notification variables initialized.")
 
 def get_subscribed_users_for_new(meeting):
     session = SessionLocal()
@@ -30,6 +32,7 @@ def get_subscribed_users_for_new(meeting):
             else:
                 filtered.append(us.user_id)
     session.close()
+    logger.debug(f"Subscribed users for new meeting {meeting['id']}: {filtered}")
     return filtered
 
 def get_subscribed_users_for_before(meeting, delta_minutes):
@@ -49,23 +52,27 @@ def get_subscribed_users_for_before(meeting, delta_minutes):
             else:
                 filtered.append(us.user_id)
     session.close()
+    logger.debug(f"Subscribed users for meeting {meeting['id']} before {delta_minutes} minutes: {filtered}")
     return filtered
 
 async def async_notify_new_meeting(meeting, user_list):
     text = STRINGS["notify_new_meeting"].format(details=formatted_meeting(meeting))
     for user_id in user_list:
         await application.bot.send_message(chat_id=user_id, text=text)
+        logger.info(f"Sent new meeting notification to user {user_id} for meeting {meeting['id']}")
 
 async def async_notify_before_meeting(meeting, user_list):
     text = STRINGS["notify_before_meeting"].format(details=formatted_meeting(meeting))
     for user_id in user_list:
         await application.bot.send_message(chat_id=user_id, text=text)
+        logger.info(f"Sent before meeting notification to user {user_id} for meeting {meeting['id']}")
 
 async def send_new_updated_notifications(new_meetings, updated_meetings):
     for meeting in new_meetings + updated_meetings:
         subs = get_subscribed_users_for_new(meeting)
         if subs:
             await async_notify_new_meeting(meeting, subs)
+            logger.info(f"Sent notifications for new/updated meeting {meeting['id']}")
 
 async def refresh_meetings(initial_run=False):
     """
@@ -76,6 +83,7 @@ async def refresh_meetings(initial_run=False):
     start = start_of_today
     end = nw_end
 
+    logger.info(f"Fetching meetings from {start} to {end}")
     new_meetings = fetch_meetings_from_gcal(start, end)
     new_map = {m["id"]: m for m in new_meetings}
 
@@ -110,6 +118,7 @@ async def refresh_meetings(initial_run=False):
         )
         session.add(meeting)
     session.commit()
+    logger.info(f"Refreshed meetings. New: {len(new_meetings_list)}, Updated: {len(updated_meetings)}")
     if not initial_run:
         await send_new_updated_notifications(new_meetings_list, updated_meetings)
     session.close()
@@ -146,3 +155,4 @@ async def notification_job(_context):
             user_list = get_subscribed_users_for_before(meeting, diff_rounded)
             if user_list:
                 await async_notify_before_meeting(meeting, user_list)
+                logger.info(f"Sent before meeting notifications for meeting {meeting['id']} starting in {diff_rounded} minutes")

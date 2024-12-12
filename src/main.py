@@ -21,6 +21,7 @@ async def startup(application):
     # Schedule recurring jobs
     application.job_queue.run_repeating(refresh_meetings, interval=300, first=300)
     application.job_queue.run_repeating(notification_job, interval=60, first=60)
+    logger.info("Startup tasks completed.")
 
 if __name__ == "__main__":
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
