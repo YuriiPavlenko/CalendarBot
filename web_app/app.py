@@ -11,9 +11,15 @@ def get_meetings(user_id):
     us = get_user_settings(session, user_id)
     show_only_mine = us.filter_by_attendant
     user_identifier = us.username if us.username else f"@{user_id}"
-    now = datetime.now()
+    
+    # Use start of today instead of now
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end_next_week = get_end_of_next_week()
-    meetings_query = session.query(Meeting).filter(Meeting.start_th >= now, Meeting.start_th <= end_next_week)
+    
+    meetings_query = session.query(Meeting).filter(
+        Meeting.start_th >= today,
+        Meeting.start_th <= end_next_week
+    )
     if show_only_mine:
         meetings_query = meetings_query.filter(Meeting.attendants.contains(user_identifier))
     meetings = meetings_query.all()
@@ -37,16 +43,23 @@ def get_day_name(date):
     return days[date.weekday()]
 
 def group_meetings_by_days(meetings):
-    # Create a dict with dates for all weekdays from today to next week's Friday
-    today = datetime.now()
+    # Start from today and get all weekdays until next week's Friday
+    today = datetime.now().date()
     dates = []
     current = today
-    while current.weekday() <= 4 or current <= today + timedelta(days=(11 - today.weekday())):
-        if current.weekday() <= 4:  # Only weekdays
-            dates.append(current.date())
+    
+    # Calculate the target end date (next week's Friday)
+    days_until_friday = (4 - today.weekday()) % 7  # Days until this week's Friday
+    if days_until_friday == 0:
+        days_until_friday = 7  # Go to next Friday
+    target_end = today + timedelta(days=days_until_friday + 7)  # Add another week
+    
+    while current <= target_end:
+        if current.weekday() <= 4:  # Only weekdays (Monday-Friday)
+            dates.append(current)
         current += timedelta(days=1)
 
-    # Group meetings by dates
+    # ...existing code for grouping meetings...
     grouped_meetings = []
     for date in dates:
         day_meetings = [m for m in meetings if m.start_th.date() == date]

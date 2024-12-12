@@ -99,7 +99,7 @@
                 {% if m.attendants %}
                   <div class="meeting-detail">
                     <i class="bi bi-people"></i>
-                    {{m.attendants.split(', ')|join(', ')}}
+                    {{m.attendants.split(',')|map('trim')|join(', ')}}
                   </div>
                 {% endif %}
                 {% if m.location %}
