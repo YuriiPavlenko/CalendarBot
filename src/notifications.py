@@ -33,7 +33,7 @@ async def refresh_meetings():
     
     try:
         meetings = fetch_meetings_from_gcal(start, end)
-        logger.info(f"Successfully fetched {len(meetings)} meetings from Google Calendar")
+        logger.info(f"Successfully fetched {meetings} meetings from Google Calendar")
     except Exception as e:
         logger.error(f"Failed to fetch meetings: {str(e)}")
         return
@@ -44,7 +44,7 @@ async def refresh_meetings():
         logger.debug(f"Found {len(subscribers)} subscribers for new meeting notifications")
         
         existing_meetings = {m.id: m for m in session.query(Meeting).all()}
-        logger.debug(f"Found {len(existing_meetings)} existing meetings in database")
+        logger.debug(f"Found {existing_meetings} existing meetings in database")
         
         session.query(Meeting).delete()
         logger.debug("Cleared existing meetings from database")
