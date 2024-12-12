@@ -61,14 +61,18 @@ def group_meetings_by_days(meetings):
     # Calculate dates range
     dates = []
     current = today_th
+    weekday = today_th.weekday()
     
-    # Calculate the target end date (next week's Friday)
-    days_until_friday = (4 - today_th.weekday()) % 7
-    if days_until_friday == 0:
-        days_until_friday = 7
-    target_end = today_th + timedelta(days=days_until_friday + 7)
+    # Calculate end of next week (next week's Friday)
+    days_until_next_friday = ((4 - weekday) + 7) % 7  # Days until next Friday
+    if days_until_next_friday == 0:
+        days_until_next_friday = 7  # If today is Friday, go to next Friday
+    end_date = today_th + timedelta(days=days_until_next_friday)
     
-    while current <= target_end:
+    logger.debug(f"Date range: {today_th} to {end_date} (days: {days_until_next_friday})")
+    
+    # Collect all weekdays until end date
+    while current <= end_date:
         if current.weekday() <= 4:  # Only weekdays
             dates.append(current)
         current += timedelta(days=1)
@@ -76,7 +80,6 @@ def group_meetings_by_days(meetings):
     # Group meetings by their Thai timezone date
     grouped_meetings = []
     for date in dates:
-        # Use Thai timezone date for comparison
         day_meetings = [
             m for m in meetings 
             if m["start_th"].astimezone(th_tz).date() == date

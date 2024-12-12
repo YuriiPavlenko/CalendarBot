@@ -28,14 +28,14 @@
 
     <div class="day-section">
       <h3>
-        <i class="bi bi-gear"></i>
+        ⚙️ <!-- Gear emoji instead of bi-gear -->
         <span class="day-name">Настройки</span>
       </h3>
       
       <div class="meeting-card settings-form">
         <form action="/save?user_id={{user_id}}" method="post">
           <div class="settings-section">
-            <h4><i class="bi bi-funnel"></i> Фильтр встреч</h4>
+            <h4>🔍 Фильтр встреч</h4> <!-- Filter emoji instead of bi-funnel -->
             <div class="form-check">
               <input class="form-check-input" type="radio" name="show_only_mine" value="false" {% if not show_only_mine %}checked{% endif %}>
               <label class="form-check-label">Все встречи</label>
@@ -47,7 +47,7 @@
           </div>
 
           <div class="settings-section">
-            <h4><i class="bi bi-bell"></i> Уведомления</h4>
+            <h4>🔔 Уведомления</h4> <!-- Bell emoji instead of bi-bell -->
             <div class="notification-checks">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="notify_1h" {% if notify_1h %}checked{% endif %}>
@@ -69,7 +69,7 @@
           </div>
 
           <button type="submit" class="save-button">
-            <i class="bi bi-check-lg"></i> Сохранить
+            ✅ Сохранить <!-- Checkmark emoji instead of bi-check-lg -->
           </button>
         </form>
       </div>
@@ -88,47 +88,47 @@
                 <h4>{{m.title}}</h4>
                 <div class="time-info">
                   <div>
-                    <i class="bi bi-globe"></i>
-                    <span class="location-label">Украина:</span>
-                    {{m.start_ua.strftime("%H:%M")}} - {{m.end_ua.strftime("%H:%M")}}
-                  </div>
-                  <div>
-                    <i class="bi bi-globe-asia-australia"></i>
+                    🌏 <!-- Globe Asia emoji instead of bi-globe-asia-australia -->
                     <span class="location-label">Таиланд:</span>
                     {{m.start_th.strftime("%H:%M")}} - {{m.end_th.strftime("%H:%M")}}
+                  </div>
+                  <div>
+                    🌍 <!-- Globe Europe emoji instead of bi-globe -->
+                    <span class="location-label">Украина:</span>
+                    {{m.start_ua.strftime("%H:%M")}} - {{m.end_ua.strftime("%H:%M")}}
                   </div>
                 </div>
                 {% if m.attendants %}
                   <div class="meeting-detail">
-                    <i class="bi bi-people"></i>
+                    👥 <!-- People emoji instead of bi-people -->
                     {{ m.attendants|join(', ') }}
                   </div>
                 {% endif %}
                 {% if m.location %}
                   <div class="meeting-detail">
-                    <i class="bi bi-geo-alt"></i>
+                    📍 <!-- Pin emoji instead of bi-geo-alt -->
                     {{m.location}}
                   </div>
                 {% endif %}
                 {% if m.hangoutLink %}
                   <div class="meeting-detail">
                     <a href="{{m.hangoutLink}}" target="_blank" class="meeting-link">
-                      <i class="bi bi-camera-video"></i>
+                      🎥 <!-- Camera emoji instead of bi-camera-video -->
                       Присоединиться
                     </a>
                   </div>
                 {% endif %}
                 {% if m.description %}
-                  <div class="meeting-detail">
-                    <i class="bi bi-card-text"></i>
-                    {{m.description}}
+                  <div class="meeting-detail description">
+                    📝 <!-- Note emoji instead of bi-card-text -->
+                    <div class="text-content">{{m.description}}</div>
                   </div>
                 {% endif %}
               </div>
             {% endfor %}
           {% else %}
             <div class="no-meetings-card">
-              <i class="bi bi-calendar-x"></i>
+              📅 <!-- Calendar emoji instead of bi-calendar-x -->
               <p>Нет встреч на этот день</p>
             </div>
           {% endif %}
