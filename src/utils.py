@@ -1,6 +1,9 @@
+import logging
 from dateutil import tz
 from .config import TIMEZONE_TH
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 def filter_meetings(meetings, filter_type, user_identifier):
     # user_identifier = "@username" if user has username, else "@{user_id}"
@@ -34,15 +37,15 @@ def get_rest_week_th():
     if weekday > 4:  # If it's weekend (Saturday or Sunday)
         # Just return a one-day range for today
         end = start + timedelta(days=1)
+    elif weekday == 4:  # If it's Friday
+        # Just return today's range
+        end = start + timedelta(days=1)
     else:
         # Find this week's Friday
-        # If today is Wednesday (2), then we need 2 more days to Friday (4-2=2)
         days_to_friday = 4 - weekday
-        
-        # Get end of Friday (next day at 00:00)
         end = (start + timedelta(days=days_to_friday + 1))
     
-    logger.debug(f"Rest of week range: {start} - {end} (weekday={weekday})")
+    logger.info(f"Rest of week range: start={start.strftime('%Y-%m-%d %H:%M %Z')}, end={end.strftime('%Y-%m-%d %H:%M %Z')}, weekday={weekday}")
     return start, end
 
 def get_next_week_th():
