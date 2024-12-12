@@ -19,15 +19,13 @@ class Meeting(Base):
     __tablename__ = "meetings"
     id = Column(String, primary_key=True)
     title = Column(String)
-    start_ua = Column(DateTime)
-    end_ua = Column(DateTime)
-    start_th = Column(DateTime)
-    end_th = Column(DateTime)
-    attendants = Column(Text)
-    hangoutLink = Column(String, nullable=True)
-    location = Column(String, nullable=True)
-    description = Column(Text, nullable=True)
-    updated = Column(DateTime)
+    start_time = Column(DateTime)  # UTC time
+    end_time = Column(DateTime)    # UTC time
+    attendants = Column(String)
+    hangoutLink = Column(String)
+    location = Column(String)
+    description = Column(String)
+    updated = Column(String)
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(bind=engine)

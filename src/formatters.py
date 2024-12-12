@@ -2,6 +2,27 @@ from dateutil import tz
 from .config import TIMEZONE_TH
 from .localization import STRINGS
 
+def convert_to_timezone(dt, timezone):
+    """Convert UTC datetime to target timezone."""
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=tz.UTC)
+    return dt.astimezone(tz.gettz(timezone))
+
+def format_meeting_time(meeting, user_timezone='Europe/Kiev'):
+    """Format meeting times according to user's timezone."""
+    start = convert_to_timezone(meeting.start_time, user_timezone)
+    end = convert_to_timezone(meeting.end_time, user_timezone)
+    
+    # Format according to locale
+    if user_timezone == TIMEZONE_TH:
+        time_format = "%H:%M %d/%m/%Y"
+    else:
+        time_format = "%H:%M %d.%m.%Y"
+    
+    return f"{start.strftime(time_format)} - {end.strftime(time_format)}"
+
 def format_meetings_list(meetings, period="today"):
     # unchanged
     th_tz = tz.gettz(TIMEZONE_TH)
@@ -55,17 +76,14 @@ def format_meetings_list(meetings, period="today"):
         return STRINGS["no_meetings"]
     return "\n".join(lines)
 
-def formatted_meeting(meeting):
+def formatted_meeting(meeting, user_timezone='Europe/Kiev'):
+    """Format meeting details with timezone-aware times."""
     lines = []
     title = meeting["title"]
-    start_ua = meeting["start_ua"].strftime("%H:%M")
-    end_ua = meeting["end_ua"].strftime("%H:%M")
-    start_th = meeting["start_th"].strftime("%H:%M")
-    end_th = meeting["end_th"].strftime("%H:%M")
+    time_str = format_meeting_time(meeting, user_timezone)
 
     lines.append(title)
-    lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
-    lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))
+    lines.append(time_str)
 
     if meeting["attendants"]:
         lines.append("Участники: " + ", ".join(meeting["attendants"]))

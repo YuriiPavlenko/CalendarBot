@@ -20,34 +20,24 @@ def safe_get_meeting_data(meeting, field, default=None):
         return getattr(meeting, field, default)
     return meeting.get(field, default)
 
-def normalize_datetime(dt, timezone=None):
-    """Normalize datetime by converting to specified timezone and removing tzinfo."""
+def normalize_datetime(dt):
+    """Normalize datetime to UTC."""
     if dt is None:
         return None
     if not isinstance(dt, datetime.datetime):
         return dt
-        
-    # If datetime has timezone info, convert to target timezone
+    
+    # If datetime has timezone info, convert to UTC
     if dt.tzinfo is not None:
-        dt = dt.astimezone(tz.gettz(timezone))
-    # Remove timezone info for database storage
-    return dt.replace(tzinfo=None)
+        return dt.astimezone(tz.UTC)
+    # If no timezone, assume UTC
+    return dt.replace(tzinfo=tz.UTC)
 
-def compare_datetimes(dt1, dt2, timezone='UTC'):
-    """Compare two datetimes after normalizing to the same timezone."""
-    if dt1 is None or dt2 is None:
-        return dt1 == dt2
-        
-    # Get timezone objects
-    tz1 = dt1.tzinfo or tz.gettz(timezone)
-    tz2 = dt2.tzinfo or tz.gettz(timezone)
-    
-    # Make both timezone-aware if they aren't already
-    dt1 = dt1 if dt1.tzinfo else dt1.replace(tzinfo=tz1)
-    dt2 = dt2 if dt2.tzinfo else dt2.replace(tzinfo=tz2)
-    
-    # Convert both to UTC for comparison
-    return dt1.astimezone(tz.UTC) == dt2.astimezone(tz.UTC)
+def compare_datetimes(dt1, dt2):
+    """Compare two datetimes in UTC."""
+    norm1 = normalize_datetime(dt1)
+    norm2 = normalize_datetime(dt2)
+    return norm1 == norm2
 
 async def send_notification(user_id, meeting, is_new=False):
     if not user_id or not meeting:
@@ -186,11 +176,9 @@ async def refresh_meetings(context=None):
             meeting = Meeting(
                 id=m.get("id"),
                 title=m.get("title", "Untitled"),
-                # Normalize datetimes before storing in database
-                start_ua=normalize_datetime(m.get("start_ua"), 'Europe/Kiev'),
-                end_ua=normalize_datetime(m.get("end_ua"), 'Europe/Kiev'),
-                start_th=normalize_datetime(m.get("start_th"), TIMEZONE_TH),
-                end_th=normalize_datetime(m.get("end_th"), TIMEZONE_TH),
+                # Store everything in UTC
+                start_time=normalize_datetime(m.get("start_ua")),
+                end_time=normalize_datetime(m.get("end_ua")),
                 attendants=",".join(m.get("attendants", []) or []),
                 hangoutLink=m.get("hangoutLink", ""),
                 location=m.get("location", ""),
@@ -198,7 +186,7 @@ async def refresh_meetings(context=None):
                 updated=m.get("updated"),
             )
             
-            if not meeting.start_th or not meeting.end_th:
+            if not meeting.start_time or not meeting.end_time:
                 logger.warning(f"Skipping meeting {meeting.id} due to missing time data")
                 continue
                 
@@ -214,7 +202,7 @@ async def refresh_meetings(context=None):
 
 async def notification_job(_context):
     logger.debug("Starting notification job")
-    now = datetime.datetime.now(tz.gettz(TIMEZONE_TH))
+    now = datetime.datetime.now(tz.UTC)
     
     session = SessionLocal()
     try:
@@ -224,13 +212,11 @@ async def notification_job(_context):
         
         notifications_sent = 0
         for meeting in meetings:
-            if not meeting or not meeting.start_th:
+            if not meeting or not meeting.start_time:
                 logger.warning(f"Skipping invalid meeting: {getattr(meeting, 'id', 'unknown')}")
                 continue
                 
-            start = meeting.start_th
-            if start.tzinfo is None:
-                start = start.replace(tzinfo=tz.gettz(TIMEZONE_TH))
+            start = normalize_datetime(meeting.start_time)
             
             minutes_until = (start - now).total_seconds() / 60.0
             logger.debug(f"Meeting {meeting.id} starts in {minutes_until:.1f} minutes")
@@ -258,8 +244,8 @@ async def notification_job(_context):
                                 meeting_dict = {
                                     "id": meeting.id,
                                     "title": meeting.title or "Untitled",
-                                    "start_th": meeting.start_th,
-                                    "end_th": meeting.end_th,
+                                    "start_th": meeting.start_time,
+                                    "end_th": meeting.end_time,
                                     "attendants": attendants,
                                     "hangoutLink": meeting.hangoutLink or "",
                                     "location": meeting.location or "",
