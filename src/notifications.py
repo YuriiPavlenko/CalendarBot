@@ -76,15 +76,55 @@ async def refresh_meetings(context=None):
         existing_meetings = {m.id: m for m in session.query(Meeting).all() if m and m.id}
         logger.debug(f"Found {len(existing_meetings)} existing meetings in database")
         
-        session.query(Meeting).delete()
-        logger.debug("Cleared existing meetings from database")
-        
         new_count = 0
         updated_count = 0
         
+        # First compare meetings without modifying the database
         for m in meetings:
             if not m or not m.get("id"):
                 logger.warning("Skipping invalid meeting entry")
+                continue
+                
+            existing_meeting = existing_meetings.get(m.get("id"))
+            if not existing_meeting:
+                new_count += 1
+                logger.debug(f"New meeting found: {m.get('title', 'Untitled')} ({m.get('id')})")
+                # Notify about truly new meetings
+                for user in subscribers:
+                    if user and user.user_id and (
+                        not user.filter_by_attendant or 
+                        (user.username and user.username in (m.get("attendants", []) or []))
+                    ):
+                        logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
+                        await send_notification(user.user_id, m, is_new=True)
+            elif (
+                existing_meeting.title != m["title"] or
+                existing_meeting.start_ua != m["start_ua"] or
+                existing_meeting.end_ua != m["end_ua"] or
+                existing_meeting.start_th != m["start_th"] or
+                existing_meeting.end_th != m["end_th"] or
+                existing_meeting.attendants != ",".join(m["attendants"]) or
+                existing_meeting.hangoutLink != m.get("hangoutLink", "") or
+                existing_meeting.location != m.get("location", "") or
+                existing_meeting.description != m.get("description", "")
+            ):
+                updated_count += 1
+                # Only notify about actually updated meetings
+                logger.debug(f"Updated meeting found: {m['title']} ({m['id']})")
+                for user in subscribers:
+                    if user and user.user_id and (
+                        not user.filter_by_attendant or 
+                        (user.username and user.username in (m.get("attendants", []) or []))
+                    ):
+                        logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
+                        await send_notification(user.user_id, m, is_new=True)
+        
+        # Only after comparison, update the database
+        session.query(Meeting).delete()
+        logger.debug("Cleared existing meetings from database")
+        
+        for m in meetings:
+            if not m or not m.get("id"):
                 continue
                 
             meeting = Meeting(
@@ -106,38 +146,6 @@ async def refresh_meetings(context=None):
                 continue
                 
             session.add(meeting)
-            
-            existing_meeting = existing_meetings.get(m.get("id"))
-            if not existing_meeting:
-                new_count += 1
-                logger.debug(f"New meeting found: {m.get('title', 'Untitled')} ({m.get('id')})")
-                for user in subscribers:
-                    if user and user.user_id and (
-                        not user.filter_by_attendant or 
-                        (user.username and user.username in (m.get("attendants", []) or []))
-                    ):
-                        logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
-                        await send_notification(user.user_id, m, is_new=True)
-            elif (
-                existing_meeting.title != m["title"] or
-                existing_meeting.start_ua != m["start_ua"] or
-                existing_meeting.end_ua != m["end_ua"] or
-                existing_meeting.start_th != m["start_th"] or
-                existing_meeting.end_th != m["end_th"] or
-                existing_meeting.attendants != ",".join(m["attendants"]) or
-                existing_meeting.hangoutLink != m.get("hangoutLink", "") or
-                existing_meeting.location != m.get("location", "") or
-                existing_meeting.description != m.get("description", "")
-            ):
-                updated_count += 1
-                logger.debug(f"Updated meeting found: {m['title']} ({m['id']})")
-                for user in subscribers:
-                    if user and user.user_id and (
-                        not user.filter_by_attendant or 
-                        (user.username and user.username in (m.get("attendants", []) or []))
-                    ):
-                        logger.debug(f"Notifying user {user.user_id} about updated meeting {m['id']}")
-                        await send_notification(user.user_id, m, is_new=True)
         
         session.commit()
         logger.info(f"Refresh complete. New meetings: {new_count}, Updated meetings: {updated_count}")
