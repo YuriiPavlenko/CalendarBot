@@ -98,28 +98,40 @@ def formatted_meeting(meeting, user_timezone='Europe/Kiev'):
     title = meeting.get('title') if isinstance(meeting, dict) else meeting.title
     lines.append(title)
 
-    # Format times for both Thai and Ukrainian timezones
+    # Get start and end times
     if isinstance(meeting, dict):
-        start_th = meeting.get('start_th')
-        end_th = meeting.get('end_th')
-        start_ua = meeting.get('start_ua')
-        end_ua = meeting.get('end_ua')
+        if 'start_time' in meeting and 'end_time' in meeting:
+            # Handle UTC times from notification job
+            start_time = meeting['start_time']
+            end_time = meeting['end_time']
+            # Convert to timezone-aware times
+            start_th = convert_to_timezone(start_time, TIMEZONE_TH)
+            end_th = convert_to_timezone(end_time, TIMEZONE_TH)
+            start_ua = convert_to_timezone(start_time, 'Europe/Kiev')
+            end_ua = convert_to_timezone(end_time, 'Europe/Kiev')
+        else:
+            # Handle already converted times
+            start_th = meeting.get('start_th')
+            end_th = meeting.get('end_th')
+            start_ua = meeting.get('start_ua')
+            end_ua = meeting.get('end_ua')
     else:
-        # Convert UTC times to respective timezones
+        # Convert from database Meeting object
         start_th = convert_to_timezone(meeting.start_time, TIMEZONE_TH)
         end_th = convert_to_timezone(meeting.end_time, TIMEZONE_TH)
         start_ua = convert_to_timezone(meeting.start_time, 'Europe/Kiev')
         end_ua = convert_to_timezone(meeting.end_time, 'Europe/Kiev')
 
     # Add formatted times
-    lines.append(STRINGS["thailand_time"].format(
-        start=start_th.strftime("%H:%M"),
-        end=end_th.strftime("%H:%M")
-    ))
-    lines.append(STRINGS["ukraine_time"].format(
-        start=start_ua.strftime("%H:%M"),
-        end=end_ua.strftime("%H:%M")
-    ))
+    if start_th and end_th and start_ua and end_ua:
+        lines.append(STRINGS["thailand_time"].format(
+            start=start_th.strftime("%H:%M"),
+            end=end_th.strftime("%H:%M")
+        ))
+        lines.append(STRINGS["ukraine_time"].format(
+            start=start_ua.strftime("%H:%M"),
+            end=end_ua.strftime("%H:%M")
+        ))
 
     # Handle attendants
     attendants = (

@@ -236,11 +236,12 @@ async def notification_job(_context):
                                 user.username in attendants
                             ):
                                 logger.debug(f"Sending {minutes}-minute notification to user {user.user_id}")
+                                # Convert meeting to dict format with proper timezone info
                                 meeting_dict = {
                                     "id": meeting.id,
                                     "title": meeting.title or "Untitled",
-                                    "start_th": meeting.start_time,
-                                    "end_th": meeting.end_time,
+                                    "start_time": meeting.start_time,  # Let formatter handle conversion
+                                    "end_time": meeting.end_time,      # Let formatter handle conversion
                                     "attendants": attendants,
                                     "hangoutLink": meeting.hangoutLink or "",
                                     "location": meeting.location or "",
