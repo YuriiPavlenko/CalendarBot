@@ -98,15 +98,15 @@ async def refresh_meetings(context=None):
                         logger.debug(f"Notifying user {user.user_id} about new meeting {m['id']}")
                         await send_notification(user.user_id, m, is_new=True)
             elif (
-                existing_meeting.title != m["title"] or
-                existing_meeting.start_ua != m["start_ua"] or
-                existing_meeting.end_ua != m["end_ua"] or
-                existing_meeting.start_th != m["start_th"] or
-                existing_meeting.end_th != m["end_th"] or
-                existing_meeting.attendants != ",".join(m["attendants"]) or
-                existing_meeting.hangoutLink != m.get("hangoutLink", "") or
-                existing_meeting.location != m.get("location", "") or
-                existing_meeting.description != m.get("description", "")
+                (existing_meeting.title or "") != (m.get("title") or "") or
+                existing_meeting.start_ua != m.get("start_ua") or
+                existing_meeting.end_ua != m.get("end_ua") or
+                existing_meeting.start_th != m.get("start_th") or
+                existing_meeting.end_th != m.get("end_th") or
+                (existing_meeting.attendants or "") == ",".join(m.get("attendants", []) or []) or
+                (existing_meeting.hangoutLink or "") != (m.get("hangoutLink") or "") or
+                (existing_meeting.location or "") != (m.get("location") or "") or
+                (existing_meeting.description or "") != (m.get("description") or "")
             ):
                 updated_count += 1
                 # Only notify about actually updated meetings
