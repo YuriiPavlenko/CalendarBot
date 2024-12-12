@@ -23,25 +23,26 @@ def get_tomorrow_th():
     return start_of_tomorrow, end_of_tomorrow
 
 def get_rest_week_th():
+    """Get range from today until end of current week (Friday 23:59:59)."""
     th_tz = tz.gettz(TIMEZONE_TH)
     now_th = datetime.now(th_tz)
+    weekday = now_th.weekday()  # 0-6, Monday is 0
     
-    # Get start of today
-    start_of_day = now_th.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Start of today
+    start = now_th.replace(hour=0, minute=0, second=0, microsecond=0)
     
-    # Calculate end of current week (Friday)
-    weekday = now_th.weekday()  # 0 is Monday, 4 is Friday
-    days_until_friday = 4 - weekday  # How many days until Friday
-    
-    if days_until_friday < 0:  # If it's already weekend
-        end_of_range = start_of_day  # Just return today as end
+    if weekday > 4:  # If it's weekend
+        # Return just today's range
+        end = start + timedelta(days=1)
     else:
-        # Get end of Friday
-        end_of_range = (start_of_day + timedelta(days=days_until_friday)).replace(
-            hour=23, minute=59, second=59
+        # Calculate days until Friday (weekday 4)
+        days_until_friday = 4 - weekday
+        # Get end of Friday (23:59:59)
+        end = (start + timedelta(days=days_until_friday)).replace(
+            hour=23, minute=59, second=59, microsecond=999999
         )
     
-    return start_of_day, end_of_range
+    return start, end
 
 def get_next_week_th():
     th_tz = tz.gettz(TIMEZONE_TH)

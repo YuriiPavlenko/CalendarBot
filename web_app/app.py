@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 from src.database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
 from src.utils import get_end_of_next_week, convert_meeting_to_display
 from datetime import datetime, timedelta
@@ -151,27 +151,40 @@ def get_meetings_json():
         ]
     }
 
-@app.get("/api/meetings/")
-async def get_meetings(
-    start: datetime = Query(default=None),
-    end: datetime = Query(default=None)
-):
-    if start and not start.tzinfo:
-        start = start.replace(tzinfo=tz.UTC)
-    if end and not end.tzinfo:
-        end = end.replace(tzinfo=tz.UTC)
-    
-    if not start:
-        start = datetime.now(tz.UTC)
-    if not end:
-        end = start + timedelta(days=7)
-    
-    session = SessionLocal()
+@app.route("/api/meetings/")
+def get_meetings_api():
+    # Get start and end from query parameters
     try:
-        meetings = session.query(Meeting).filter(
-            Meeting.start_time >= start,
-            Meeting.start_time < end
-        ).all()
-        return [convert_meeting_to_display(m) for m in meetings]
-    finally:
-        session.close()
+        start_str = request.args.get('start')
+        end_str = request.args.get('end')
+        
+        if start_str:
+            start = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+        else:
+            start = datetime.now(tz.UTC)
+            
+        if end_str:
+            end = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+        else:
+            end = start + timedelta(days=7)
+        
+        # Ensure times are UTC
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=tz.UTC)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=tz.UTC)
+        
+        session = SessionLocal()
+        try:
+            meetings = session.query(Meeting).filter(
+                Meeting.start_time >= start,
+                Meeting.start_time < end
+            ).all()
+            return jsonify([convert_meeting_to_display(m) for m in meetings])
+        finally:
+            session.close()
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# ...rest of the code...
