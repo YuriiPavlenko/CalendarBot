@@ -103,7 +103,7 @@ async def refresh_meetings(context=None):
                 existing_meeting.end_ua != m.get("end_ua") or
                 existing_meeting.start_th != m.get("start_th") or
                 existing_meeting.end_th != m.get("end_th") or
-                (existing_meeting.attendants or "") == ",".join(m.get("attendants", []) or []) or
+                (existing_meeting.attendants or "") != ",".join(m.get("attendants", []) or []) or  # Fixed operator
                 (existing_meeting.hangoutLink or "") != (m.get("hangoutLink") or "") or
                 (existing_meeting.location or "") != (m.get("location") or "") or
                 (existing_meeting.description or "") != (m.get("description") or "")
