@@ -69,7 +69,6 @@ def group_meetings_by_days(meetings):
         days_until_next_friday = 7  # If today is Friday, go to next Friday
     end_date = today_th + timedelta(days=days_until_next_friday)
     
-    logger.debug(f"Date range: {today_th} to {end_date} (days: {days_until_next_friday})")
     
     # Collect all weekdays until end date
     while current <= end_date:
