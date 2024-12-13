@@ -216,17 +216,24 @@ async def notification_job(_context):
             minutes_until = (start - now).total_seconds() / 60.0
             logger.debug(f"Meeting {meeting.id} starts in {minutes_until:.1f} minutes")
             
-            for minutes in [60, 15, 5]:
-                if abs(minutes_until - minutes) <= 1:
-                    logger.debug(f"Meeting {meeting.id} matches {minutes}-minute notification window")
+            # Define tighter notification windows
+            notification_windows = [
+                (60, 0.5, "1-hour"),    # 60 minutes ± 30 seconds
+                (15, 0.25, "15-minute"), # 15 minutes ± 15 seconds
+                (5, 0.25, "5-minute")    # 5 minutes ± 15 seconds
+            ]
+            
+            for target_minutes, tolerance, window_name in notification_windows:
+                if target_minutes - tolerance <= minutes_until <= target_minutes + tolerance:
+                    logger.debug(f"Meeting {meeting.id} matches {window_name} notification window")
                     for user in users:
                         if not user or not user.user_id:
                             continue
                             
                         should_notify = (
-                            (minutes == 60 and user.notify_1h) or
-                            (minutes == 15 and user.notify_15m) or
-                            (minutes == 5 and user.notify_5m)
+                            (target_minutes == 60 and user.notify_1h) or
+                            (target_minutes == 15 and user.notify_15m) or
+                            (target_minutes == 5 and user.notify_5m)
                         )
                         
                         if should_notify:
@@ -235,7 +242,7 @@ async def notification_job(_context):
                                 user.username and 
                                 user.username in attendants
                             ):
-                                logger.debug(f"Sending {minutes}-minute notification to user {user.user_id}")
+                                logger.debug(f"Sending {window_name} notification to user {user.user_id}")
                                 # Convert meeting to dict format with proper timezone info
                                 meeting_dict = {
                                     "id": meeting.id,

@@ -98,7 +98,13 @@
                     {{m.start_ua.strftime("%H:%M")}} - {{m.end_ua.strftime("%H:%M")}}
                   </div>
                 </div>
-                {% if m.attendants %}
+                {% if m.description %}
+                  <div class="meeting-detail description">
+                    📝 <!-- Note emoji instead of bi-card-text -->
+                    <div class="text-content">{{m.description}}</div>
+                  </div>
+                {% endif %}
+                {% if m.attendants and m.attendants|length > 0 %}
                   <div class="meeting-detail">
                     👥 <!-- People emoji instead of bi-people -->
                     {{ m.attendants|join(', ') }}
@@ -116,12 +122,6 @@
                       🎥 <!-- Camera emoji instead of bi-camera-video -->
                       Присоединиться
                     </a>
-                  </div>
-                {% endif %}
-                {% if m.description %}
-                  <div class="meeting-detail description">
-                    📝 <!-- Note emoji instead of bi-card-text -->
-                    <div class="text-content">{{m.description}}</div>
                   </div>
                 {% endif %}
               </div>
