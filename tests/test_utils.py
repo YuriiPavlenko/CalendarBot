@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
 from dateutil import tz
+from src.database import Meeting
 from src.utils import (
     filter_meetings,
     get_today_th,
