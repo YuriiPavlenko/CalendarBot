@@ -216,16 +216,25 @@ async def notification_job(_context):
             minutes_until = (start - now).total_seconds() / 60.0
             logger.debug(f"Meeting {meeting.id} starts in {minutes_until:.1f} minutes")
             
-            # Define tighter notification windows
+            # Define notification windows with wider tolerances
             notification_windows = [
-                (60, 0.5, "1-hour"),    # 60 minutes ± 30 seconds
-                (15, 0.25, "15-minute"), # 15 minutes ± 15 seconds
-                (5, 0.25, "5-minute")    # 5 minutes ± 15 seconds
+                (60, 1.0, "1-hour"),     # 60 minutes ± 2 minutes
+                (15, 1.0, "15-minute"),   # 15 minutes ± 1 minute
+                (5, 1.0, "5-minute")      # 5 minutes ± 30 seconds
             ]
             
             for target_minutes, tolerance, window_name in notification_windows:
-                if target_minutes - tolerance <= minutes_until <= target_minutes + tolerance:
-                    logger.debug(f"Meeting {meeting.id} matches {window_name} notification window")
+                window_min = target_minutes - tolerance
+                window_max = target_minutes + tolerance
+                in_window = window_min <= minutes_until <= window_max
+                
+                logger.debug(
+                    f"Checking {window_name} window for meeting {meeting.id}: "
+                    f"window={window_min:.1f}-{window_max:.1f}, "
+                    f"minutes_until={minutes_until:.1f}, matches={in_window}"
+                )
+                
+                if in_window:
                     for user in users:
                         if not user or not user.user_id:
                             continue
