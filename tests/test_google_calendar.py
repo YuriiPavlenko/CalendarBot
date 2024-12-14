@@ -75,7 +75,7 @@ def test_transform_event_to_meeting():
     }
     
     meeting = transform_event_to_meeting(event)
-    assert meeting['id'] == 'test123'
+    assert meeting['id'] == 'test23'
     assert meeting['title'] == 'Test Meeting'
     assert '@nickname' in meeting['attendants']
     assert meeting['location'] == 'Room 1'
