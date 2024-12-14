@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 from telegram import BotCommand
 from telegram.ext import Application
 from .config import TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_URL, WEBHOOK_PORT
-from .handlers.start import start_handler
-from .handlers.gets import (get_today_handler, get_tomorrow_handler, get_rest_week_handler, get_next_week_handler)
+from .start import start_handler
+from .gets import (get_today_handler, get_tomorrow_handler, get_rest_week_handler, get_next_week_handler)
 from .notifications import refresh_meetings, notification_job
 from .localization import STRINGS
 

@@ -1,6 +1,9 @@
+import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.orm import sessionmaker, declarative_base
-from .config import DATABASE_URL
+
+# Use environment variable or default to sqlite for testing
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
 
 Base = declarative_base()
 

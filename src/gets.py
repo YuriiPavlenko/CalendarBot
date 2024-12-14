@@ -3,11 +3,11 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-from ..database import SessionLocal, Meeting
-from ..utils import get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th
-from ..localization import STRINGS
-from ..formatters import format_meetings_list
-from ..config import TIMEZONE_TH
+from database import SessionLocal, Meeting
+from .utils import get_today_th, get_tomorrow_th, get_rest_week_th, get_next_week_th  # Add relative import
+from .localization import STRINGS  # Add relative import
+from .formatters import format_meetings_list  # Add relative import
+from .config import TIMEZONE_TH  # Add relative import
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +38,9 @@ async def _get_meetings_for_period(update: Update, context: ContextTypes.DEFAULT
         formatted_meetings = []
         for m in meetings:
             start_th = m.start_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz(TIMEZONE_TH))
-            end_th = m.end_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz(TIMEZONE_TH))
+            end_th = m.end_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz(TIMEZONE_TH)) if m.end_time else None
             start_ua = m.start_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz('Europe/Kiev'))
-            end_ua = m.end_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz('Europe/Kiev'))
+            end_ua = m.end_time.replace(tzinfo=tz.UTC).astimezone(tz.gettz('Europe/Kiev')) if m.end_time else None
             
             formatted_meetings.append({
                 "id": m.id,

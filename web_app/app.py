@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify
-from src.database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
+from database import SessionLocal, get_user_settings, set_filter, set_notifications, Meeting
 from src.utils import get_end_of_next_week, convert_meeting_to_display
 from src.config import TIMEZONE_TH  # Add this import
 from datetime import datetime, timedelta

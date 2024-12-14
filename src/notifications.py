@@ -2,8 +2,8 @@ import datetime
 import logging
 from dateutil import tz
 from telegram import Bot
-from .config import TIMEZONE_TH, TELEGRAM_BOT_TOKEN
-from .database import SessionLocal, Meeting, UserSettings
+from .config import TIMEZONE_TH, TELEGRAM_BOT_TOKEN  # Add relative import
+from database import SessionLocal, Meeting, UserSettings
 from .localization import STRINGS
 from .utils import get_next_week_th
 from .google_calendar import fetch_meetings_from_gcal

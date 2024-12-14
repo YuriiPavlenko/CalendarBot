@@ -7,9 +7,30 @@ logger = logging.getLogger(__name__)
 
 def filter_meetings(meetings, filter_type, user_identifier):
     # user_identifier = "@username" if user has username, else "@{user_id}"
-    if filter_type:
-        return [m for m in meetings if user_identifier in m["attendants"]]
-    return meetings
+    if not filter_type:
+        for meeting in meetings:
+            if "attendants" not in meeting:
+                meeting["attendants"] = []
+        return meetings
+    
+    if meetings is None:
+        return []
+        
+    filtered_meetings = []
+    for meeting in meetings:
+        attendants = meeting.get("attendants")
+        if attendants is None:
+            continue
+        if isinstance(attendants, list):
+            cleaned_attendants = [attendant.strip() for attendant in attendants if isinstance(attendant, str)]
+            if user_identifier in cleaned_attendants:
+                filtered_meetings.append(meeting)
+        elif isinstance(attendants, str):
+            cleaned_attendants = [attendant.strip() for attendant in attendants.split(",") if isinstance(attendant, str) and attendant.strip()]
+            if user_identifier in cleaned_attendants:
+                filtered_meetings.append(meeting)
+    
+    return filtered_meetings
 
 def get_today_th():
     th_tz = tz.gettz(TIMEZONE_TH)
@@ -77,16 +98,16 @@ def convert_meeting_to_display(meeting, ua_tz='Europe/Kiev', th_tz='Asia/Bangkok
     
     if start_utc.tzinfo is None:
         start_utc = start_utc.replace(tzinfo=tz.UTC)
-    if end_utc.tzinfo is None:
+    if end_utc is not None and end_utc.tzinfo is None:
         end_utc = end_utc.replace(tzinfo=tz.UTC)
         
     return {
         "id": meeting.id,
         "title": meeting.title,
         "start_ua": start_utc.astimezone(tz.gettz(ua_tz)),
-        "end_ua": end_utc.astimezone(tz.gettz(ua_tz)),
+        "end_ua": end_utc.astimezone(tz.gettz(ua_tz)) if end_utc else None,
         "start_th": start_utc.astimezone(tz.gettz(th_tz)),
-        "end_th": end_utc.astimezone(tz.gettz(th_tz)),
+        "end_th": end_utc.astimezone(tz.gettz(th_tz)) if end_utc else None,
         "attendants": meeting.attendants.split(",") if meeting.attendants else [],
         "hangoutLink": meeting.hangoutLink,
         "location": meeting.location,
