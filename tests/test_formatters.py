@@ -10,15 +10,14 @@ from src.formatters import (
 @pytest.fixture
 def sample_meeting():
     return {
-        "title": "Test Meeting",
-        "start_th": datetime.now(tz.gettz('Asia/Bangkok')),
-        "end_th": datetime.now(tz.gettz('Asia/Bangkok')) + timedelta(hours=1),
-        "start_ua": datetime.now(tz.gettz('Europe/Kiev')),
-        "end_ua": datetime.now(tz.gettz('Europe/Kiev')) + timedelta(hours=1),
-        "attendants": ["@user1", "@user2"],
-        "location": "Room 1",
-        "hangoutLink": "https://meet.google.com/123",
-        "description": "Test description"
+        "title": "Штурм иконок",
+        "start_th": datetime(2024, 12, 17, 15, 0, tzinfo=tz.gettz('Asia/Bangkok')),
+        "end_th": datetime(2024, 12, 17, 16, 0, tzinfo=tz.gettz('Asia/Bangkok')),
+        "start_ua": datetime(2024, 12, 17, 15, 0, tzinfo=tz.gettz('Europe/Kiev')),
+        "end_ua": datetime(2024, 12, 17, 16, 0, tzinfo=tz.gettz('Europe/Kiev')),
+        "attendants": ["@ohshtein", "@romann_92", "@koshkooo", "@emerel", "@barslav", "@hmerijes"],
+        "hangoutLink": "https://meet.google.com/etc-wqwm-ege",
+        "description": ""
     }
 
 def test_format_meeting_time(sample_meeting):
@@ -29,6 +28,29 @@ def test_format_meeting_time(sample_meeting):
 
 def test_formatted_meeting(sample_meeting):
     result = formatted_meeting(sample_meeting)
-    assert sample_meeting["title"] in result
+    assert "Штурм иконок" in result
     assert "Таиланд:" in result
     assert "Украина:" in result
+    assert "https://meet.google.com/etc-wqwm-ege" in result
+    assert "@ohshtein" in result
+    assert "@romann_92" in result
+    assert "15:00" in result  # Check for specific time
+    assert "16:00" in result  # Check for end time
+
+def test_format_meetings_list():
+    meetings = [{
+        "title": "Штурм иконок",
+        "start_th": datetime(2024, 12, 17, 15, 0, tzinfo=tz.gettz('Asia/Bangkok')),
+        "end_th": datetime(2024, 12, 17, 16, 0, tzinfo=tz.gettz('Asia/Bangkok')),
+        "start_ua": datetime(2024, 12, 17, 15, 0, tzinfo=tz.gettz('Europe/Kiev')),
+        "end_ua": datetime(2024, 12, 17, 16, 0, tzinfo=tz.gettz('Europe/Kiev')),
+        "attendants": ["@ohshtein", "@romann_92"],
+        "hangoutLink": "https://meet.google.com/etc-wqwm-ege"
+    }]
+    
+    result = format_meetings_list(meetings)
+    assert "Штурм иконок" in result
+    assert "15:00" in result
+    assert "16:00" in result
+    assert "@ohshtein" in result
+    assert "https://meet.google.com/etc-wqwm-ege" in result

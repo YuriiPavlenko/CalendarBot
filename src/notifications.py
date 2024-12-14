@@ -16,9 +16,9 @@ def safe_get_meeting_data(meeting, field, default=None):
     """Safely get meeting data with null checking."""
     if meeting is None:
         return default
-    if isinstance(meeting, Meeting):
-        return getattr(meeting, field, default)
-    return meeting.get(field, default)
+    if isinstance(meeting, dict):
+        return meeting.get(field, default)
+    return getattr(meeting, field, default)
 
 def normalize_datetime(dt):
     """Normalize datetime to UTC."""

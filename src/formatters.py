@@ -69,13 +69,13 @@ def format_meetings_list(meetings, period="today"):
             lines.append(f"{title}")
             lines.append(STRINGS["thailand_time"].format(start=start_th, end=end_th))
             lines.append(STRINGS["ukraine_time"].format(start=start_ua, end=end_ua))  # Fixed named parameter
-            if mt["attendants"]:
+            if "attendants" in mt and mt["attendants"]:
                 lines.append("Участники: " + ", ".join(mt["attendants"]))
-            if mt["hangoutLink"]:
+            if "hangoutLink" in mt and mt["hangoutLink"]:
                 lines.append(STRINGS["link_label"].format(link=mt["hangoutLink"]))
-            if mt["location"]:
+            if "location" in mt and mt["location"]:
                 lines.append(STRINGS["location_label"].format(location=mt["location"]))
-            if mt["description"]:
+            if "description" in mt and mt["description"]:
                 lines.append(STRINGS["description_label"].format(description=mt["description"]))
             lines.append("")
         if lines[-1] == "":

@@ -1,7 +1,10 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import Mock, patch, AsyncMock
 from dateutil import tz
+
+pytest_plugins = ['pytest_asyncio']
+
 from src.notifications import (
     safe_get_meeting_data, 
     normalize_datetime,
@@ -9,33 +12,50 @@ from src.notifications import (
     send_notification,
     refresh_meetings
 )
-from src.database import Meeting, UserSettings
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, create_engine
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
+
+class MeetingModel(Base):
+    __tablename__ = "meetings"
+    id = Column(String, primary_key=True)
+    title = Column(String)
+    start_time = Column(DateTime)  # UTC time
+    end_time = Column(DateTime)    # UTC time
+    attendants = Column(String)
+    hangoutLink = Column(String)
+    location = Column(String)
+    description = Column(String)
+    updated = Column(String)
 
 @pytest.fixture
 def sample_meeting_dict():
     return {
-        "id": "123",
-        "title": "Test Meeting",
-        "start_ua": datetime.now(tz.UTC),
-        "end_ua": datetime.now(tz.UTC) + timedelta(hours=1),
-        "start_th": datetime.now(tz.gettz('Asia/Bangkok')),
-        "end_th": datetime.now(tz.gettz('Asia/Bangkok')) + timedelta(hours=1),
-        "attendants": ["@user1", "@user2"],
-        "location": "Room 1",
-        "hangoutLink": "https://meet.google.com/123",
-        "description": "Test description",
-        "updated": "2023-01-01T00:00:00Z"
+        "id": "36828kaerpn17l08dma0gdd09f_20241217T080000Z",
+        "title": "Штурм иконок",
+        "start_ua": datetime(2024, 12, 17, 15, 0, tzinfo=UTC),
+        "end_ua": datetime(2024, 12, 17, 16, 0, tzinfo=UTC),
+        "start_th": datetime(2024, 12, 17, 15, 0, tzinfo=tz.gettz('Asia/Bangkok')),
+        "end_th": datetime(2024, 12, 17, 16, 0, tzinfo=tz.gettz('Asia/Bangkok')),
+        "attendants": ["@ohshtein", "@romann_92", "@koshkooo", "@emerel", "@barslav", "@hmerijes"],
+        "hangoutLink": "https://meet.google.com/etc-wqwm-ege",
+        "description": "",
+        "updated": "2024-12-12T16:59:47.499Z"
     }
 
 @pytest.fixture
 def sample_meeting_obj():
-    meeting = Meeting()
-    meeting.id = "123"
-    meeting.title = "Test Meeting"
-    meeting.start_time = datetime.now(tz.UTC)
-    meeting.end_time = datetime.now(tz.UTC) + timedelta(hours=1)
-    meeting.attendants = "@user1,@user2"
-    meeting.location = "Room 1"
+    meeting = MeetingModel()
+    meeting.id = "e83ofps6ljkshume7jbvabs1mc"
+    meeting.title = "Тест2"
+    meeting.start_time = datetime(2024, 12, 20, 10, 15, tzinfo=UTC)
+    meeting.end_time = datetime(2024, 12, 20, 11, 45, tzinfo=UTC)
+    meeting.attendants = ""
+    meeting.hangoutLink = ""
+    meeting.location = ""
+    meeting.description = ""
+    meeting.updated = "2024-12-13T07:26:51.647Z"
     return meeting
 
 @pytest.fixture
@@ -45,19 +65,30 @@ def mock_bot():
 @pytest.fixture
 def mock_session():
     session = Mock()
-    session.query = Mock()
+    # Configure query mock to return a query object with delete method
+    query_mock = Mock()
+    query_mock.delete = Mock(return_value=None)  # Ensure delete returns something
+    query_mock.all = Mock(return_value=[])  # Default to empty list
+    query_mock.filter = Mock(return_value=query_mock)  # Support filter chaining
+    session.query.return_value = query_mock
     session.commit = Mock()
     session.close = Mock()
     return session
 
+@pytest.fixture(autouse=True)
+def mock_create_engine():
+    with patch('src.database.create_engine') as mock_engine:
+        mock_engine.return_value = create_engine('sqlite:///:memory:')
+        yield mock_engine
+
 def test_safe_get_meeting_data_dict(sample_meeting_dict):
-    assert safe_get_meeting_data(sample_meeting_dict, "id") == "123"
-    assert safe_get_meeting_data(sample_meeting_dict, "title") == "Test Meeting"
+    assert safe_get_meeting_data(sample_meeting_dict, "id") == "36828kaerpn17l08dma0gdd09f_20241217T080000Z"
+    assert safe_get_meeting_data(sample_meeting_dict, "title") == "Штурм иконок"
     assert safe_get_meeting_data(sample_meeting_dict, "nonexistent", "default") == "default"
 
 def test_safe_get_meeting_data_obj(sample_meeting_obj):
-    assert safe_get_meeting_data(sample_meeting_obj, "id") == "123"
-    assert safe_get_meeting_data(sample_meeting_obj, "title") == "Test Meeting"
+    assert safe_get_meeting_data(sample_meeting_obj, "id") == "e83ofps6ljkshume7jbvabs1mc"
+    assert safe_get_meeting_data(sample_meeting_obj, "title") == "Тест2"
     assert safe_get_meeting_data(sample_meeting_obj, "nonexistent", "default") == "default"
 
 def test_safe_get_meeting_data_with_none():
@@ -98,35 +129,44 @@ async def test_send_notification(mock_bot):
         mock_bot.send_message.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_refresh_meetings_new_meeting(mock_session, sample_meeting_dict):
+async def test_refresh_meetings_new_meeting(mock_create_engine, mock_session, sample_meeting_dict):
+    query_mock = mock_session.query.return_value
+    query_mock.all.side_effect = [
+        [],  # First call for UserSettings.notify_new
+        [],  # Second call for Meeting.all
+    ]
+    
     with patch('src.notifications.SessionLocal', return_value=mock_session), \
          patch('src.notifications.fetch_meetings_from_gcal', return_value=[sample_meeting_dict]):
-        
-        mock_session.query().all.return_value = []  # No existing meetings
         await refresh_meetings()
         
-        # Verify that delete and add were called
-        mock_session.query().delete.assert_called_once()
+        # Verify the calls
+        query_mock.delete.assert_called_once()
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_refresh_meetings_updated_meeting(mock_session, sample_meeting_dict):
-    existing_meeting = Meeting(
-        id="123",
+async def test_refresh_meetings_updated_meeting(mock_create_engine, mock_session, sample_meeting_dict):
+    existing_meeting = MeetingModel(
+        id="36828kaerpn17l08dma0gdd09f_20241217T080000Z",
         title="Old Title",
-        start_time=datetime.now(tz.UTC),
-        end_time=datetime.now(tz.UTC) + timedelta(hours=1),
-        attendants="@user1",
-        updated="2023-01-01T00:00:00Z"
+        start_time=datetime(2024, 12, 17, 15, 0, tzinfo=UTC),
+        end_time=datetime(2024, 12, 17, 16, 0, tzinfo=UTC),
+        attendants="@ohshtein,@romann_92",  # Different attendants to trigger update
+        updated="2024-12-12T16:59:47.499Z"
     )
+    
+    query_mock = mock_session.query.return_value
+    query_mock.all.side_effect = [
+        [],  # First call for UserSettings.notify_new
+        [existing_meeting],  # Second call for Meeting.all
+    ]
     
     with patch('src.notifications.SessionLocal', return_value=mock_session), \
          patch('src.notifications.fetch_meetings_from_gcal', return_value=[sample_meeting_dict]):
-        
-        mock_session.query().all.return_value = [existing_meeting]
         await refresh_meetings()
         
-        mock_session.query().delete.assert_called_once()
+        # Verify the calls
+        query_mock.delete.assert_called_once()
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
