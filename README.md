@@ -26,3 +26,4 @@ User settings are edited via a Telegram WebApp (mini-app) with radio/checkbox in
 
 ## Logging
 Logs are in JSON format for Railway compatibility.
+# Trigger CI
